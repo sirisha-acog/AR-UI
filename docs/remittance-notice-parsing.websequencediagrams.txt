@@ -1,0 +1,20 @@
+title Remittance Notice Parsing
+
+App->+OCR: recognize_text(image)
+OCR-->-App: HOCR_file
+
+App->*HOCRDoc: HOCR_file
+
+App->+TemplateRepo: Lookup(customer)
+TemplateRepo-->-App: Template[]
+
+loop template_matching
+  App->+Template: match(HOCRDoc)
+  Template->*MatchedTemplate: if there is a match
+  Template-->-App: MatchedTemplate
+end
+
+App->+MatchedTemplate: extract
+MatchedTemplate-->-App: extracted fields
+
+App->ResultStore: save(extracted fields)
