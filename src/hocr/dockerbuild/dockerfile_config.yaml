@@ -1,0 +1,38 @@
+# Uncomment the required sections depending on the use-case
+# Name of the base image 
+BASE_IMAGE_NAME: aganitha/geo-cpu
+
+# Flag to use cache while building the image before starting the container
+USE_CACHE: False
+
+# This section should declare whether to create a new user
+# By default the username would be jupyter
+CREATE_USER: False
+USER_NAME: jupyter
+
+# Project Group Config
+GID: group_id
+GROUP_NAME: project_group
+
+# SYS_DEP, CUSTOM_DEP and PY_DEP should be under one directory
+# Name of the file containing the system level packages
+#SYS_DEP: system_requirements.txt
+
+# File declaring all custom installations from third party sources like github
+CUSTOM_DEP: custom_steps.txt
+
+# Name of the file containing python dependencies
+#PY_DEP: python_requirements.txt
+
+# Ports that should be exposed
+#PORTS: [8888]
+
+# Working Directory when container starts
+WORKDIR: /home
+
+# Command to be executed when container spawns. By default it will try to spawn a jupyter notebook
+CMD: '["jupyter", "notebook", "--ip=*", "--no-browser"]'
+
+# Name of docker image to be built
+FINAL_IMAGE_NAME: aganitha/gen_image
+

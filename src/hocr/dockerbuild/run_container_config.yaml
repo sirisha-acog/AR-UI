@@ -1,0 +1,49 @@
+# Name of the docker image which should be attached to container
+IMAGE_NAME: aganitha/docker_test
+
+# Name of the current project
+PROJECT_NAME: project_name
+
+# Project Config
+GID: project_group_id
+GROUP_NAME: project_group
+
+# Flag to specify the cpu/gpu
+DOCKER_TYPE: cpu
+
+# Optional flags to start the container
+FLAGS: --rm -d
+
+# name of the userspace to mount directories and source code
+USER_NAME: jupyter
+
+# path to the source code
+SRC: aganitha_hocr
+
+# Path to all editable python modules being developed as part of project. Comment the below lines if no dependencies
+PROJECT_PY_PACKAGES:
+PROJECT_MODELS_PACKAGES:
+
+# Specify mode of installation of packages(dev-0 , prod-1)
+INSTALL_MODE: 0
+
+# List of projects on which this project depend. Comment the below lines if no dependencies
+DEPENDENCIES: 
+    PROJ_1: name of project 1
+    PROJ_2: name of project 2
+
+# List of existing containers to link
+#LINK:
+#    container_to_link: alias_for_container
+
+# Specify Virtual Ports to be exposed
+#VIRTUAL_PORT: 6006
+
+# Specify any port mappings as strings
+#PORTMAPS: ["6006:6006" , "80:80"]
+
+# Overriding command when container spawns
+CMD: jupyter notebook --ip=* --no-browser
+
+# Name of the container
+CONTAINER_NAME: panvoter_classifier
