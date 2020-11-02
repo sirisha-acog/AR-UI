@@ -1,0 +1,6 @@
+RUN if which pip 2>/dev/null; then echo "pip found" && pip install --upgrade pip; fi
+RUN rm -rf /opt/conda/lib/python3.6/site-packages/yaml 2>/dev/null
+RUN rm -rf /opt/conda/lib/python3.6/site-packages/PyYAML-* 2>/dev/null
+RUN rm -r /opt/conda/lib/python3.6/site-packages/certifi* 2>/dev/null
+RUN pip install certifi==2018.4.16
+RUN pip install PyYAML==5.1
