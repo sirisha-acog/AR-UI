@@ -13,7 +13,6 @@ class QueryCompiler(object):
 
     def compile(self) -> CompiledQuery_t:
         query_list = self.query.split('/')
-        print(query_list)
         compiled_query = []
         for query in query_list[1:]:
             axis, argument = query.split(':')
@@ -27,7 +26,7 @@ class QueryCompiler(object):
             elif axis == 'left':
                 step = StepLeft(axis, argument[:-1])
             elif axis == 'text':
-                step = StepText(axis, argument[:-1])
+                step = StepText(axis, argument)
             compiled_query.append(step)
         return compiled_query
 

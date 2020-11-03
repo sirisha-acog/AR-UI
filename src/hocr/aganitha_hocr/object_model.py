@@ -3,7 +3,7 @@ from typing import TypeVar, List, Optional
 from aganitha_parsing_utils.html import HTMLParsingUtils
 from fuzzywuzzy import fuzz
 import logging
-
+from src.hocr.aganitha_hocr.utils import Utils
 
 logger = logging.getLogger(__name__)
 
@@ -28,27 +28,14 @@ class Region(object):
         self.y_top_left = y_top_left
         self.x_top_left = x_top_left
 
-    @staticmethod
-    def __split_bbox(list_of_lists: list) -> list:
-        """
-        Split the list of bounding box lists.
-        """
-        list_of_bbox = []
-        for title in list_of_lists:
-            title = title.split(';')
-            title = title[0].split()
-            title = [int(i) for i in title[1:]]
-            list_of_bbox.append(title)
-        return list_of_bbox
-
     def get_parsed_values(self) -> object:
         """
         Objects are parsed sequentially in xpath. The function uses xpath matching to give
         title[A list of bbox] and word. Parsing is only done for class = 'ocrx_word'
         """
         # The bbox is sequentially listed
-        title_list = self.__split_bbox(self.file.match_xpath('.//span[@class="ocrx_word"]/@title'))
-        text_list = self.file.match_xpath('.//span[@class="ocrx_word"]/text()')
+        title_list = Utils.split_bbox(self.parent_doc.match_xpath('.//span[@class="ocrx_word"]/@title'))
+        text_list = self.parent_doc.match_xpath('.//span[@class="ocrx_word"]/text()')
         return title_list, text_list
 
     def get_blockset(self) -> BlockSet_t:
@@ -62,7 +49,7 @@ class Region(object):
         y_bot_right_coord = [t[3] for t in bbox_list]
         blockset = []
         for i in range(0, len(word_list)):
-            blockset.append(Block(x_top_left_coord[i], y_top_left_coord[i], x_bot_right_coord[i], y_bot_right_coord[i],
+            blockset.append(Block(self.parent_doc, x_top_left_coord[i], y_top_left_coord[i], x_bot_right_coord[i], y_bot_right_coord[i],
                                   word_list[i]))
         return BlockSet(blockset)
 
@@ -79,8 +66,8 @@ class Region(object):
         for i in range(0, len(word_list)):
             if (x_top_left_coord[i] > self.x_top_left) and (y_top_left_coord[i] > self.y_top_left) and \
                     (x_bot_right_coord[i] < self.x_bot_right) and (y_bot_right_coord[i] < self.y_bot_right):
-                blockset.append(Block(x_top_left_coord[i], y_top_left_coord[i], x_bot_right_coord[i],
-                                      y_bot_right_coord[i], word_list[i]))
+                blockset.append(Block(self.parent_doc, x_top_left_coord[i], y_top_left_coord[i], x_bot_right_coord[i],
+                                      y_bot_right_coord[i], word=word_list[i]))
         return BlockSet(blockset)
 
 
