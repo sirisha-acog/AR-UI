@@ -111,35 +111,6 @@ class HOCRDoc(object):
         self.hocr = HTMLParsingUtils(from_file=hocr_file)
         print(type(self.hocr))
 
-    def parsed_object(self) -> HTMLParsingUtils:
-        return self.hocr
-
-    def find_region(self, query: str) -> Region:
-        """
-        The function takes a string query and understands it to define a Region data structure.
-        :params query: str
-        :return Region:
-        Query parsed -> coordinates
-        Region(coordinates)
-        """
-        query_obj = QueryCompiler(query)
-        compiled_query = query_obj.compile()
-        query_compile_obj = CompiledQuery(compiled_query)
-        region = query_compile_obj.execute_query(self.hocr)
-        return region
-
-    def find_blockset_in_region(self, x_top_left: int, y_top_left: int, x_bot_right: int,
-                                y_bot_right: int) -> BlockSet:
-        """
-        Given coordinates for a region, find the blockset.
-        :params x_top_left: int, y_top_left: int, x_bot_right: int, y_bot_right: int:
-        :returns BlockSet:
-        """
-        region = Region(self.hocr, x_top_left, y_top_left, x_bot_right, y_bot_right)
-        blockset = region.get_blockset_by_region()
-
-        return blockset
-
     @staticmethod
     def find_block_in_blockset(query: str, context: BlockSet):
         """
@@ -159,27 +130,3 @@ class HOCRDoc(object):
                 return
 
         print('No Match.')
-
-
-# hocr = HOCRDoc('/home/adarsh/ar-automation/tmp/07.06.20-lb83197-1-10-addl-doc-01.jpg.hocr')
-# blocks = hocr.find_blockset_in_region(250, 300, 750, 750)
-# hocr.find_block_in_blockset('KRAFT', blocks)
-# hocr.find_block_in_blockset('KATZ', blocks)
-"""
-def main():
-    hocr = HOCRDoc('/home/adarsh/ar-automation/tmp/07.06.20-lb83197-1-10-addl-doc-01.jpg.hocr')
-    blocks = hocr.find_blockset_in_region(250, 300, 750, 750)
-    
-    TOP:20
-    [[TOP , 20], [BOT, 30]]
-    Parse the above values
-    Region (x,y)
-    find_blockset_in_region(Region)
-    
-    
-"""
-"""
-hocr = HTMLParsingUtils(from_file='/home/adarsh/ar-automation/tmp/07.06.20-lb83197-1-10-addl-doc-01.jpg.hocr')
-tmp = hocr.match_xpath('.//div[@class="ocr_page"]/@title')
-print(tmp)
-"""
