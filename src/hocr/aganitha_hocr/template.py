@@ -10,5 +10,8 @@ class Template(object):
         self.matched_rule = matched_rule
         self.extraction_queries = extraction_queries
 
+    def collect_rules(self, rule: List[Rule]):
+        pass
+
     def match(self, doc: HTMLParsingUtils, state: Optional[MatchedTemplate, None]):
         pass
