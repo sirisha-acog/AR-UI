@@ -16,7 +16,7 @@ class Step(object):
 
 
 class StepTop(Step):
-    def execute(self, context: Union[HOCRDoc, Region, Block]) -> Union[Region, BlockSet, Block]:
+    def execute(self, context: Union[HOCRDoc, Region, Block], type: str="percentage") -> Union[Region, BlockSet, Block]:
         """
         Get a new region >> 20% of top or 20% * page y value.
         return Region(x_top)
@@ -24,6 +24,9 @@ class StepTop(Step):
         # if not context.parent_doc:
         # Takes from HOCRDoc instance attribute self.hocr as no region has been defined
         if isinstance(context, HOCRDoc):
+            # check if the step is already available in matched_templates
+            # if yes, then get the blockset from matched_templates
+            # if no, compute it and store in matched_templates
             print("-----> Step applied on HOCRDoc Object")
             hocr = context.hocr
             title = hocr.match_xpath('.//div[@class="ocr_page"]/@title')
@@ -35,6 +38,9 @@ class StepTop(Step):
                           y_bot_right=int(bbox[3] * arg))
 
         elif isinstance(context, Region):
+            # check if the step is already available in matched_templates
+            # if yes, then get the blockset from matched_templates
+            # if no, compute it and store in matched_templates
             print("-----> Step applied on Region Object")
             parent_doc = context.parent_doc
             current_xtl = context.x_top_left
@@ -45,6 +51,9 @@ class StepTop(Step):
             arg = float(int(self.argument) * 0.01)
             return Region(parent_doc=parent_doc, x_top_left=current_xtl, y_top_left=current_ytl, x_bot_right=current_xbr
                           , y_bot_right=int(current_ybr * arg))
+
+        # after executing the step, it will store the blockset and query in matched_templates
+        # the name of query would be axis(top)+argument
 
 
 class StepBottom(Step):

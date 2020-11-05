@@ -31,7 +31,7 @@ class QueryCompiler(object):
         return compiled_query
 
 
-class CompiledQuery(object):
+class QueryExecutor(object):
     def __init__(self, parsed_query: List[Step]):
         self.parsed_query = parsed_query
 
@@ -40,8 +40,18 @@ class CompiledQuery(object):
         for step in self.parsed_query:
             next_step_context = step.execute(next_step_context)
 
+        matched_template.matched_regions[]
         return next_step_context
 
+# hocr_doc = HOCRdoc()
+# block_set_1 = QueryCompiler(hocr_doc, StepTop, 30)   # every function will return a set
+# block_set_2 = QueryCompiler(block_set_1, right, 20)
+# if block_set_2 not in matched_templates:
+#       matched_templates.append(block_set_2)
+# block_set_3 = QueryCompiler(block_set_2, text, "Date")
 
-cq = QueryCompiler('PAGE/TOP:20%/RIGHT:30%/TEXT:Date')
-compiled = cq.compile()
+# block_set_4 = QueryCompiler(matched_templates[block_set_2], text, "Invoice number")
+
+# class QueryCompiler(object):
+#    def __init__(self, query:):
+#        self.query =

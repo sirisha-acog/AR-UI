@@ -17,3 +17,39 @@ input invalid cases. ('TOP/150%') is invalid.
 Need to find a better way to strip '%' symbol from str.
 Can we use FUNCTION as a keyword in our language? Limit the search scope to block.
 """
+
+# loading template repository and matching template
+"""
+hocr_doc = new HOCRDoc(“/my/file.hocr”)
+customer_template_list = load_template(standard_path = './template_repo)
+template_not_matched = True
+do:
+    # load customer template dynamically iteratively
+    template = TemplateRepo.get_template_for_customer(customer_template_list[i])
+    matchedTemplatestatus = template.match(context)
+    if matchedTemplatestatus:
+        template_not_matched = False
+        matchedTemplate = customer_template_list[i]
+        # need to think about class structure for extracted information for each customer
+        extracted_information = matchedTemplate.extract(hocr_doc)  
+    else:
+    customer_template_list.pop(customer_template_list[i])
+while template_not_matched 
+
+
+"""
+
+"""
+list of functions available
+- top(BlockSet, argument=100, type="percentage")
+- bottom(BlockSet, argument=10, type="percentage")
+- left (BlockSet, argument=10, type="percentage")
+- right(BlockSet, argument=10, type="percentage")
+- nearest(BlockSet, axis="top") 
+- farthest(BlockSet, axis="top")
+- Intersection(List[BlockSet])
+- Union(List[BlockSet]
+
+data storage
+
+"""
