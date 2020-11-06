@@ -66,8 +66,8 @@ class Block(object):
     and the word that is detected.
     """
 
-    def __init__(self, parent_doc: HTMLParsingUtils, x_top_left: float, y_top_left: float, x_bot_right: float,
-                 y_bot_right: float, word: str):
+    def __init__(self, parent_doc: HTMLParsingUtils, x_top_left: int, y_top_left: int, x_bot_right: int,
+                 y_bot_right: int, word: str):
         self.parent_doc = parent_doc
         self.x_top_left = x_top_left
         self.y_top_left = y_top_left

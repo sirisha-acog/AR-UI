@@ -18,21 +18,27 @@ logger = logging.getLogger(__name__)
 
 class TopRightDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        context = right(top(context, argument=30), 30)
+        context = right(top(context, argument=90), 50)
         block_set = context.get_blockset_by_query("DATE:")
+        logger.debug("In TopRightDateChecker")
         if len(block_set.blocks) == 1:
+            logger.debug("True")
             return True
         else:
+            logger.debug("False")
             return False
 
 
 class TopRightCheckChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        context = right(top(context, argument=30), 30)
+        context = right(top(context, argument=90), 50)
         block_set = context.get_blockset_by_query("NUMBER:")
+        logger.debug("In TopRightCheckChecker")
         if len(block_set.blocks) == 1:
+            logger.debug("True")
             return True
         else:
+            logger.debug("False")
             return False
 
 
@@ -68,8 +74,8 @@ class TopRightCheckMatcher(Matcher):
 class MMS(Extractor):
 
     def __init__(self):
-        self.matched_list = [TopRightCheckMatcher(), TopRightDateMatcher()]
-        self.predicate_list = [TopRightCheckChecker(), TopRightDateChecker()]
+        self.matched_list = [TopRightDateMatcher(), TopRightCheckMatcher()]
+        self.predicate_list = [TopRightDateChecker(), TopRightCheckChecker()]
 
     def match(self, context: BlockSet) -> bool:
         for predicate in self.predicate_list:

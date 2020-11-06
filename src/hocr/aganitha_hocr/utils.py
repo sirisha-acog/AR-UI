@@ -25,3 +25,4 @@ class Utils:
             bbox = bbox[1].split()
             bbox = [int(i) for i in bbox[1:]]
         return bbox
+
