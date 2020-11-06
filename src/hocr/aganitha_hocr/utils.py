@@ -1,3 +1,6 @@
+from typing import List
+
+
 class Utils:
     @staticmethod
     def split_bbox(list_of_lists: list) -> list:
@@ -22,6 +25,3 @@ class Utils:
             bbox = bbox[1].split()
             bbox = [int(i) for i in bbox[1:]]
         return bbox
-
-
-
