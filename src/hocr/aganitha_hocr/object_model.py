@@ -10,10 +10,9 @@ logger = logging.getLogger(__name__)
 # import collections
 
 # TypeVars
-Region_t = TypeVar('Region')
 BlockSet_t = TypeVar('BlockSet')
 Block_t = TypeVar('Block')
-HOCRDoc_t = TypeVar('HOCRDoc')
+Page_t = TypeVar('Page')
 
 
 class BlockSet(object):
@@ -24,8 +23,9 @@ class BlockSet(object):
     You can also use indexing like in a normal list.
     """
 
-    def __init__(self, parent_doc: HTMLParsingUtils, x_top_left: int, y_top_left: int, x_bot_right: int,
-                 y_bot_right: int, blocks: List[Block_t]):
+    def __init__(self, parent_doc: HTMLParsingUtils, blocks: List[Block_t], x_top_left: Optional[int] = None,
+                 y_top_left: Optional[int] = None,
+                 x_bot_right: Optional[int] = None, y_bot_right: Optional[int] = None):
         self.parent_doc = parent_doc
         self.y_bot_right = y_bot_right
         self.x_bot_right = x_bot_right
@@ -39,10 +39,11 @@ class BlockSet(object):
     def __getitem__(self, item):
         return self.blocks[item]
 
-    def get_block_from_blockset(self, query: str) -> Block_t:
+    def get_blockset_by_query(self, query: str) -> Block_t:
         """
         Check if the query word is present in the blockset or not
         """
+        block_list = []
         for block in self.blocks:
 
             if fuzz.ratio(query, block.word) == 100:
@@ -52,9 +53,11 @@ class BlockSet(object):
                 logger.info('Coordinates are [x_tl,y_tl,x_br, y_br]: %r %r %r %r', block.x_top_left, block.y_top_left,
                             block.x_bot_right,
                             block.y_bot_right)
-                return block
+                block_list.append(block)
 
-        logger.info('No Match.')
+            else:
+                logger.info('No Match.')
+        return BlockSet(parent_doc=self.parent_doc, blocks=block_list)
 
 
 class Block(object):
@@ -71,15 +74,15 @@ class Block(object):
         self.x_bot_right = x_bot_right
         self.y_bot_right = y_bot_right
         self.word = word
-        self.x_centre = int(self.x_top_left + (self.x_bot_right - self.x_top_left)/2)
-        self.y_centre = int(self.y_top_left + (self.y_bot_right - self.y_top_left)/2)
+        self.x_centre = int(self.x_top_left + (self.x_bot_right - self.x_top_left) / 2)
+        self.y_centre = int(self.y_top_left + (self.y_bot_right - self.y_top_left) / 2)
         self.centre = [self.x_centre, self.y_centre]
 
 
-class HOCRDoc(object):
+class Page(object):
 
-    def __init__(self, hocr_file: Optional[str]):
-        self.hocr = HTMLParsingUtils(from_file=hocr_file)
+    def __init__(self, file_path: Optional[str]):
+        self.page = HTMLParsingUtils(from_file=file_path)
         self.page_blockset = self.get_blockset()
 
     def get_parsed_values(self) -> object:
@@ -88,16 +91,16 @@ class HOCRDoc(object):
         title[A list of bbox] and word. Parsing is only done for class = 'ocrx_word'
         """
         # The bbox is sequentially listed
-        title_list = Utils.split_bbox(self.hocr.match_xpath('.//span[@class="ocrx_word"]/@title'))
-        text_list = self.hocr.match_xpath('.//span[@class="ocrx_word"]/text()')
-        page = self.hocr.match_xpath('.//div[@class="ocr_page"]/@title')
+        title_list = Utils.split_bbox(self.page.match_xpath('.//span[@class="ocrx_word"]/@title'))
+        text_list = self.page.match_xpath('.//span[@class="ocrx_word"]/text()')
+        page = self.page.match_xpath('.//div[@class="ocr_page"]/@title')
         # Get bbox coordinates
         bbox_page = Utils.split_bbox_page(page)
         return title_list, text_list, bbox_page
 
     def get_blockset(self) -> BlockSet_t:
         """
-        Returns all blocks in the page as a BlockSet data structure present in the hocr file of class='ocrx_word'
+        Returns all blocks in the page as a BlockSet data structure present in the page file of class='ocrx_word'
         """
         bbox_list, word_list, bbox_page = self.get_parsed_values()
         x_top_left_coord = [t[0] for t in bbox_list]
@@ -106,8 +109,8 @@ class HOCRDoc(object):
         y_bot_right_coord = [t[3] for t in bbox_list]
         blockset = []
         for i in range(0, len(word_list)):
-            blockset.append(Block(self.hocr, x_top_left_coord[i], y_top_left_coord[i], x_bot_right_coord[i],
+            blockset.append(Block(self.page, x_top_left_coord[i], y_top_left_coord[i], x_bot_right_coord[i],
                                   y_bot_right_coord[i],
                                   word_list[i]))
-        return BlockSet(parent_doc=self.hocr, x_top_left=bbox_page[0], y_top_left=bbox_page[1],
+        return BlockSet(parent_doc=self.page, x_top_left=bbox_page[0], y_top_left=bbox_page[1],
                         x_bot_right=bbox_page[2], y_bot_right=bbox_page[3], blocks=blockset)

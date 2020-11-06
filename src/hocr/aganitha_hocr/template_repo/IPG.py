@@ -17,8 +17,8 @@ This file contains main code base.
 
 
 # importing project dependencies
-from src.hocr.aganitha_hocr.rule import import Rule
-from src.hocr.aganitha_hocr.template import Template
+from src.hocr.aganitha_hocr.matcher import import Rule
+from src.hocr.aganitha_hocr.extractor import Template
 
 class IPGTemplate(Template):
     def __init__(self):
