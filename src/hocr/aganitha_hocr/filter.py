@@ -1,7 +1,10 @@
-from typing import List
+from typing import List, Union
 
 from src.hocr.aganitha_hocr.object_model import BlockSet, Block
 from scipy.spatial.distance import euclidean
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: Given a query containing multiple strings we should be able to identify block sets with some tolerance T.
@@ -55,7 +58,7 @@ def left(context: BlockSet, argument: float = 100, percentage: bool = True) -> B
                     y_bot_right=context.y_bot_right, blocks=blocks)
 
 
-def nearest(context: BlockSet, anchor: Block, axis: str) -> BlockSet:
+def nearest(context: BlockSet, anchor: Union[Block, BlockSet], axis: str) -> BlockSet:
     """
     Distance between centres should give use the nearest block
     """
@@ -68,8 +71,8 @@ def nearest(context: BlockSet, anchor: Block, axis: str) -> BlockSet:
             for block in blocks:
                 if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
                     default = block
-
         return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+
     elif axis.lower() == "left":
         left_coord_of_anchor = anchor.x_top_left
         blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
@@ -79,10 +82,10 @@ def nearest(context: BlockSet, anchor: Block, axis: str) -> BlockSet:
             for block in blocks:
                 if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
                     default = block
-
         return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+
     elif axis.lower() == "top":
-        top_coord_of_anchor = context.y_top_left
+        top_coord_of_anchor = anchor.y_top_left
         blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
                                       x_bot_right=context.x_bot_right, y_bot_right=top_coord_of_anchor)
         default = blocks[0]
@@ -90,8 +93,10 @@ def nearest(context: BlockSet, anchor: Block, axis: str) -> BlockSet:
             for block in blocks:
                 if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
                     default = block
+        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+
     elif axis.lower() == "bot":
-        bot_coord_of_anchor = context.y_bot_right
+        bot_coord_of_anchor = anchor.y_bot_right
         blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=bot_coord_of_anchor,
                                       x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
         default = blocks[0]
@@ -99,3 +104,54 @@ def nearest(context: BlockSet, anchor: Block, axis: str) -> BlockSet:
             for block in blocks:
                 if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
                     default = block
+        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+
+
+def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockSet, Block]:
+    """
+    Take input = [Paid, on, behalf, of]
+    Want to bundle them together in a blockset.
+    So when user does get_text(context, "Paid on behalf of") we get this
+    blockset and use it as an input to nearest function.
+    nearest(context, get_text(context, "Paid on behalf of"), axis = right) we get
+    Martin as answer
+
+    Define a BlockSet function where it "sets" the BlockSet x,y coordinates based
+    on the coordinates of blocks it encompasses
+
+    first search for all the words in the given query.
+    2 conditions, 1 for single length query and another for multi length query
+    for text in query:
+        find nearest block to the text in right and bottom directions
+            if the block.word is text.next
+            append the block to a blockset and return a new blockset.
+    """
+    if level == "word":
+        print("Inside Word")
+        return context.get_blockset_by_query(query)
+    elif level == "phrase":
+        print("Inside Phrase")
+        # Check if All the queries are present
+        query = query.split()
+        status = True
+        query_list = []
+        for text in query:
+            print(text)
+            if not context.get_blockset_by_query(text):
+                status = False
+                logger.debug("%r is not present in context. Status = %r", text, status)
+            query_list.append(context.get_blockset_by_query(text))
+        logger.debug("Ran Successfully. Status = %r", status)
+        print(len(query_list))
+        for i in range(0, (len(query_list)-1)):
+            anchor_block_set = query_list[i]
+            print("iter", i)
+            next_right = nearest(context, anchor_block_set.blocks[0], axis="right")
+            next_bot = nearest(context, anchor_block_set.blocks[0], axis="bot")
+            print(next_right.blocks[0].word)
+            if next_right.blocks[0].word == query_list[i + 1].blocks[0].word:
+                print("Add to return blocks list:", next_right.blocks[0].word)
+            if next_bot.blocks[0].word == query_list[i + 1].blocks[0].word:
+                print("Add to return blocks list:", next_bot.blocks[0].word)
+
+
