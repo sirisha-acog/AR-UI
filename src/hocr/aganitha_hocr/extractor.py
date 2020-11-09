@@ -30,9 +30,3 @@ class Extractor(object):
 
     def extract(self, context: BlockSet) -> List[str]:
         pass
-
-    def validate(self, context: BlockSet, data: List[str]) -> bool:
-        pass
-
-    def transform(self, context: BlockSet, data: List[str]) -> Any:
-        pass
