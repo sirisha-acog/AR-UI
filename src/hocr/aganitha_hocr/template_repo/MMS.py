@@ -4,7 +4,7 @@
 from typing import Any, List, Union
 
 from src.hocr.aganitha_hocr.extractor import Extractor
-from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest
+from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest, get_text, nearest_by_text
 from src.hocr.aganitha_hocr.matcher import Matcher
 from src.hocr.aganitha_hocr.object_model import BlockSet
 from src.hocr.aganitha_hocr.predicate import Predicate
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class TopRightDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         context = right(top(context, argument=90), 50)
-        block_set = context.get_blockset_by_query("DATE:")
+        block_set = get_text(context, "DATE:")
         logger.debug("In TopRightDateChecker")
         if len(block_set.blocks) == 1:
             logger.debug("True")
@@ -34,7 +34,7 @@ class TopRightDateChecker(Predicate):
 class TopRightCheckChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         context = right(top(context, argument=90), 50)
-        block_set = context.get_blockset_by_query("NUMBER:")
+        block_set = get_text(context, "NUMBER:")
         logger.debug("In TopRightCheckChecker")
         if len(block_set.blocks) == 1:
             logger.debug("True")
@@ -44,9 +44,14 @@ class TopRightCheckChecker(Predicate):
             return False
 
 
-class VendorNumberChecker(Predicate):
-    def check(self, context: BlockSet):
-        pass
+class InvoiceDateChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        context = left(top(context, argument=90), argument=50)
+        block_set = get_text(context, "COX MEDIA GROUP", level="phrase")
+        # temp = nearest_by_text(context, block_set.blocks[0], "Number", axis="right")
+        # print("nearest by text: ", temp.blocks[0].word)
+
+        return True
 
 
 # MATCHERS
@@ -54,8 +59,8 @@ class VendorNumberChecker(Predicate):
 class TopRightDateMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[Any]:
         logger.debug("In TopRightDateMatcher")
-        context = right(top(context, argument=90), 50)
-        block_set = context.get_blockset_by_query("DATE:")
+        context = right(top(context, argument=90), 70)
+        block_set = get_text(context, "DATE:")
         if len(block_set.blocks) == 1:
             month = nearest(context, block_set.blocks[0], axis="right")
             day = nearest(context, month.blocks[0], axis="right")
@@ -76,7 +81,7 @@ class TopRightCheckMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
         logger.debug("In TopRightCheckMatcher")
         context = right(top(context, argument=90), 50)
-        block_set = context.get_blockset_by_query("NUMBER:")
+        block_set = get_text(context, "NUMBER:")
         if len(block_set.blocks) == 1:
             check_num = nearest(context, block_set.blocks[0], axis="right")
             logger.debug("%r", check_num.blocks[0].word)
@@ -86,6 +91,9 @@ class TopRightCheckMatcher(Matcher):
             return [check_num.blocks[0].word]
 
 
+class InvoiceDateMatcher(Matcher):
+    pass
+
 
 # MMS Class Extractor
 
@@ -93,7 +101,7 @@ class MMS(Extractor):
 
     def __init__(self):
         self.matched_list = [TopRightDateMatcher(), TopRightCheckMatcher()]
-        self.predicate_list = [TopRightDateChecker(), TopRightCheckChecker()]
+        self.predicate_list = [TopRightDateChecker(), TopRightCheckChecker(), InvoiceDateChecker()]
 
     def match(self, context: BlockSet) -> bool:
         for predicate in self.predicate_list:

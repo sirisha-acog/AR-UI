@@ -1,5 +1,5 @@
 # Imports
-from typing import TypeVar, List, Optional
+from typing import TypeVar, List, Optional, Union
 from aganitha_parsing_utils.html import HTMLParsingUtils
 from fuzzywuzzy import fuzz
 import logging
@@ -39,7 +39,7 @@ class BlockSet(object):
     def __getitem__(self, item):
         return self.blocks[item]
 
-    def get_blockset_by_query(self, query: str) -> Block_t:
+    def get_blockset_by_query(self, query: Union[str, List[str]]) -> Block_t:
         """
         Check if the query word is present in the blockset or not
         """

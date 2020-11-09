@@ -107,6 +107,64 @@ def nearest(context: BlockSet, anchor: Union[Block, BlockSet], axis: str) -> Blo
         return BlockSet(parent_doc=context.parent_doc, blocks=[default])
 
 
+def nearest_by_text(context: BlockSet, anchor: Union[Block, BlockSet], query: str, axis: str) -> BlockSet:
+    """
+    Distance between centres should give use the nearest block
+    """
+    if axis.lower() == "right":
+        right_coord_of_anchor = anchor.x_bot_right
+        blocks = get_blocks_by_region(context, x_top_left=right_coord_of_anchor, y_top_left=context.y_top_left,
+                                      x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
+
+        default = blocks[0]
+        if len(blocks) != 0:
+            for block in blocks:
+                if query == block.word:
+                    default = block
+                    if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                        default = block
+        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+
+    elif axis.lower() == "left":
+        left_coord_of_anchor = anchor.x_top_left
+        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
+                                      x_bot_right=left_coord_of_anchor, y_bot_right=context.y_bot_right)
+        default = blocks[0]
+        if len(blocks) != 0:
+            for block in blocks:
+                if query == block.word:
+                    default = block
+                    if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                        default = block
+        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+
+    elif axis.lower() == "top":
+        top_coord_of_anchor = anchor.y_top_left
+        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
+                                      x_bot_right=context.x_bot_right, y_bot_right=top_coord_of_anchor)
+        default = blocks[0]
+        if len(blocks) != 0:
+            for block in blocks:
+                if query == block.word:
+                    default = block
+                    if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                        default = block
+        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+
+    elif axis.lower() == "bot":
+        bot_coord_of_anchor = anchor.y_bot_right
+        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=bot_coord_of_anchor,
+                                      x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
+        default = blocks[0]
+        if len(blocks) != 0:
+            for block in blocks:
+                if query == block.word:
+                    default = block
+                    if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                        default = block
+        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+
+
 def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockSet, Block]:
     """
     Take input = [Paid, on, behalf, of]
@@ -127,31 +185,21 @@ def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockS
             append the block to a blockset and return a new blockset.
     """
     if level == "word":
-        print("Inside Word")
         return context.get_blockset_by_query(query)
     elif level == "phrase":
-        print("Inside Phrase")
         # Check if All the queries are present
         query = query.split()
         status = True
         query_list = []
         for text in query:
-            print(text)
             if not context.get_blockset_by_query(text):
                 status = False
                 logger.debug("%r is not present in context. Status = %r", text, status)
             query_list.append(context.get_blockset_by_query(text))
         logger.debug("Ran Successfully. Status = %r", status)
-        print(len(query_list))
         for i in range(0, (len(query_list)-1)):
             anchor_block_set = query_list[i]
-            print("iter", i)
-            next_right = nearest(context, anchor_block_set.blocks[0], axis="right")
-            next_bot = nearest(context, anchor_block_set.blocks[0], axis="bot")
-            print(next_right.blocks[0].word)
-            if next_right.blocks[0].word == query_list[i + 1].blocks[0].word:
-                print("Add to return blocks list:", next_right.blocks[0].word)
-            if next_bot.blocks[0].word == query_list[i + 1].blocks[0].word:
-                print("Add to return blocks list:", next_bot.blocks[0].word)
-
-
+            next_right = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i+1].blocks[0].word, axis="right")
+            next_bot = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i+1].blocks[0].word, axis="bot")
+            logger.debug("Next Right: %r", next_right.blocks[0].word)
+            logger.debug("Next Bot: %r", next_bot.blocks[0].word)
