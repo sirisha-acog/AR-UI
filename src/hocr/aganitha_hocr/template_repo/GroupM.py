@@ -18,13 +18,12 @@ logger = logging.getLogger(__name__)
 class TopLeftCustomerNameChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         context = left(top(context, argument=40), 30)
-        for query in ["GROUPM","WAVEMAKER"]:
+        for query in ["GROUPM", "WAVEMAKER"]:
             block_set = context.get_blockset_by_query(query)
             if len(block_set.blocks) == 1:
                 return True
 
         return False
-
 
 
 class TopRightCheckChecker(Predicate):

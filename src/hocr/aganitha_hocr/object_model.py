@@ -54,9 +54,6 @@ class BlockSet(object):
                             block.x_bot_right,
                             block.y_bot_right)
                 block_list.append(block)
-
-            else:
-                logger.info('No Match.')
         return BlockSet(parent_doc=self.parent_doc, blocks=block_list)
 
 

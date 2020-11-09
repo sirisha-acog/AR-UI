@@ -1,11 +1,10 @@
 from typing import List
 
 from src.hocr.aganitha_hocr.object_model import BlockSet, Block
-from src.hocr.aganitha_hocr.utils import Utils
 from scipy.spatial.distance import euclidean
 
 
-# TODO: Given a query containing multiple strings we should be able to identify blocksets with some tolerance T.
+# TODO: Given a query containing multiple strings we should be able to identify block sets with some tolerance T.
 
 def get_blocks_by_region(context: BlockSet, x_top_left: int, y_top_left: int,
                          x_bot_right: int, y_bot_right) -> List[Block]:
@@ -70,4 +69,33 @@ def nearest(context: BlockSet, anchor: Block, axis: str) -> BlockSet:
                 if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
                     default = block
 
-        return BlockSet(blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+    elif axis.lower() == "left":
+        left_coord_of_anchor = anchor.x_top_left
+        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
+                                      x_bot_right=left_coord_of_anchor, y_bot_right=context.y_bot_right)
+        default = blocks[0]
+        if len(blocks) != 0:
+            for block in blocks:
+                if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                    default = block
+
+        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+    elif axis.lower() == "top":
+        top_coord_of_anchor = context.y_top_left
+        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
+                                      x_bot_right=context.x_bot_right, y_bot_right=top_coord_of_anchor)
+        default = blocks[0]
+        if len(blocks) != 0:
+            for block in blocks:
+                if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                    default = block
+    elif axis.lower() == "bot":
+        bot_coord_of_anchor = context.y_bot_right
+        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=bot_coord_of_anchor,
+                                      x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
+        default = blocks[0]
+        if len(blocks) != 0:
+            for block in blocks:
+                if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                    default = block

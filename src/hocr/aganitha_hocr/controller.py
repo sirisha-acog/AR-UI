@@ -12,3 +12,4 @@ if __name__ == "__main__":
         extracted_values = mms.extract(page.page_blockset)
     else:
         logger.debug("Template did not match")
+    logger.info(extracted_values)

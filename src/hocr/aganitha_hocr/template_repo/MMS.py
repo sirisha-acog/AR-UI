@@ -16,6 +16,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# PREDICATES
+
 class TopRightDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         context = right(top(context, argument=90), 50)
@@ -42,34 +44,50 @@ class TopRightCheckChecker(Predicate):
             return False
 
 
+class VendorNumberChecker(Predicate):
+    def check(self, context: BlockSet):
+        pass
+
+
+# MATCHERS
+
 class TopRightDateMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[Any]:
-        context = right(top(context, argument=30), 30)
+        logger.debug("In TopRightDateMatcher")
+        context = right(top(context, argument=90), 50)
         block_set = context.get_blockset_by_query("DATE:")
         if len(block_set.blocks) == 1:
             month = nearest(context, block_set.blocks[0], axis="right")
             day = nearest(context, month.blocks[0], axis="right")
             year = nearest(context, day.blocks[0], axis="right")
+            logger.debug("%r", month.blocks[0].word)
+            logger.debug("%r", day.blocks[0].word)
+            logger.debug("%r", year.blocks[0].word)
             # Regex Validations
             if not re.match(r'[a-zA-Z]', month.blocks[0].word):
                 logger.debug("Date Does Not Match Exception!!")
             # Call Helper function to convert the date format
             date = month.blocks[0].word + day.blocks[0].word + year.blocks[0].word
-            # date = parse(date)
+            date = parse(date)
             return [date]
 
 
 class TopRightCheckMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
-        context = right(top(context, argument=30), 30)
+        logger.debug("In TopRightCheckMatcher")
+        context = right(top(context, argument=90), 50)
         block_set = context.get_blockset_by_query("NUMBER:")
         if len(block_set.blocks) == 1:
             check_num = nearest(context, block_set.blocks[0], axis="right")
+            logger.debug("%r", check_num.blocks[0].word)
             # Regex Validations
             if not re.match(r'[0-9]', check_num.blocks[0].word):
                 logger.debug("Exception!!!")
             return [check_num.blocks[0].word]
 
+
+
+# MMS Class Extractor
 
 class MMS(Extractor):
 
