@@ -7,9 +7,5 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     page = Page('/home/adarsh/work/ar-automation/tmp/07.07.20-lb83143-1-2-addl-doc-01.jpg.hocr')
     mms = MMS()
-    status = mms.match(page.page_blockset)
-    if status:
-        extracted_values = mms.extract(page.page_blockset)
-    else:
-        logger.debug("Template did not match")
-    logger.info(extracted_values)
+    logger.debug("Match Output: %r", mms.match(page.page_blockset))
+    logger.info("Extracted Params: %r", mms.extract())

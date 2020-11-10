@@ -51,6 +51,7 @@ class TopRightCheckNumberChecker(Predicate):
 
         return False
 
+
 class TopRightDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         context = right(top(context, argument=40), 50)
@@ -62,6 +63,7 @@ class TopRightDateChecker(Predicate):
                 return True
 
         return False
+
 
 class TopLeftCustomerNameChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
@@ -79,7 +81,6 @@ class TopLeftCustomerNameChecker(Predicate):
 class GroupM(Extractor):
 
     def __init__(self):
-
         self.check_number = None
         self.check_date = None
 
@@ -103,5 +104,3 @@ class GroupM(Extractor):
         extracted_params = {}
 
         return extracted_params
-
-

@@ -166,7 +166,7 @@ def nearest_by_text(context: BlockSet, anchor: Union[Block, BlockSet], query: st
         return BlockSet(parent_doc=context.parent_doc, blocks=[default])
 
 
-def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockSet, Block]:
+def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockSet, List[Block]]:
     """
     Take input = [Paid, on, behalf, of]
     Want to bundle them together in a blockset.
@@ -198,6 +198,9 @@ def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockS
                 logger.debug("%r is not present in context. Status = %r", text, status)
             query_list.append(context.get_blockset_by_query(text))
         logger.debug("Ran Successfully. Status = %r", status)
+        base = query_list[0]
+        base = base.blocks[0]
+        block_set = [base]
         for i in range(0, (len(query_list) - 1)):
             anchor_block_set = query_list[i]
             next_right = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i + 1].blocks[0].word,
@@ -206,13 +209,47 @@ def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockS
                                        axis="bot")
             logger.debug("Next Right: %r", next_right.blocks[0].word)
             logger.debug("Next Bot: %r", next_bot.blocks[0].word)
-
-    return block_set
-
-
-def union(context: BlockSet):
-    return context
+            block_set.append(next_right.blocks[0])
+        return block_set
 
 
-def intersection(context: BlockSet):
-    return context
+def union(context1: BlockSet, context2: BlockSet) -> BlockSet:
+    """
+    choose max xtl,ytl,xbr,ybr and update total blocks = [context1.blocks + context2.blocks]
+    """
+    new_x_top_left = min(context1.x_top_left, context2.x_top_left)
+    new_y_top_left = min(context1.y_top_left, context2.y_top_left)
+    new_x_bot_right = max(context1.x_bot_right, context2.x_bot_right)
+    new_y_bot_right = max(context1.y_bot_right, context2.y_bot_right)
+    blocks = context1.blocks + context2.blocks
+    return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left, x_bot_right=new_x_bot_right,
+                    y_bot_right=new_y_bot_right, blocks=blocks)
+
+
+def intersection(context1: BlockSet, context2: BlockSet) -> BlockSet:
+    """
+    doOverlap? -> bool:
+        if yes:
+            we want coordinates of intersection rectangle. find all blocks in that rectangle by
+            get_blocks_by_region(context = context1, coords = [intersection_rectangel_coords])
+            return BlockSet withr elevant blocks
+
+    """
+    # If one rectangle is on left side of other
+    if context1.x_top_left >= context2.x_bot_right or context2.x_top_left >= context1.x_bot_right:
+        logger.debug("DOES NOT INTERSECT")
+    # If one rectangle is above other
+    elif context1.y_top_left <= context2.y_bot_right or context2.y_top_left <= context1.y_bot_right:
+        logger.debug("DOES NOT INTERSECT")
+    else:
+        # Look up https://math.stackexchange.com/a/2477358 for logic
+        logger.debug("Blocks Do Intersect")
+        new_x_top_left = max(context1.x_top_left, context2.x_top_left)
+        new_y_top_left = max(context1.y_top_left, context2.y_top_left)
+        new_x_bot_right = min(context1.x_bot_right, context2.x_bot_right)
+        new_y_bot_right = min(context1.y_bot_right, context2.y_bot_right)
+        blocks = get_blocks_by_region(context=context1, x_top_left=new_x_top_left, y_top_left=new_y_top_left,
+                                      x_bot_right=new_x_bot_right, y_bot_right=new_y_bot_right)
+        return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left,
+                        x_bot_right=new_x_bot_right,
+                        y_bot_right=new_y_bot_right, blocks=blocks)
