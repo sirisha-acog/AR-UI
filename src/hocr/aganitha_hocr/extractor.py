@@ -15,11 +15,8 @@ class Extractor(object):
             raise Exception
         else:
             extracted_data = self.extract(context)
-            if not self.validate(context, extracted_data):
-                raise Exception
-            else:
-                transformed_data = self.transform(context, extracted_data)
-        return transformed_data
+
+        return extracted_data
 
     def match(self, context: BlockSet) -> bool:
         """

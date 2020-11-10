@@ -203,3 +203,5 @@ def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockS
             next_bot = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i+1].blocks[0].word, axis="bot")
             logger.debug("Next Right: %r", next_right.blocks[0].word)
             logger.debug("Next Bot: %r", next_bot.blocks[0].word)
+
+    return string_set, block_set
