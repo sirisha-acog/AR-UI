@@ -7,7 +7,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# TODO: Given a query containing multiple strings we should be able to identify block sets with some tolerance T.
+# TODO: 1. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
+# TODO: 2. Given a query containing multiple strings, we should be able to return union or intersection of all blocksets
 
 def get_blocks_by_region(context: BlockSet, x_top_left: int, y_top_left: int,
                          x_bot_right: int, y_bot_right) -> List[Block]:
@@ -197,11 +198,21 @@ def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockS
                 logger.debug("%r is not present in context. Status = %r", text, status)
             query_list.append(context.get_blockset_by_query(text))
         logger.debug("Ran Successfully. Status = %r", status)
-        for i in range(0, (len(query_list)-1)):
+        for i in range(0, (len(query_list) - 1)):
             anchor_block_set = query_list[i]
-            next_right = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i+1].blocks[0].word, axis="right")
-            next_bot = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i+1].blocks[0].word, axis="bot")
+            next_right = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i + 1].blocks[0].word,
+                                         axis="right")
+            next_bot = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i + 1].blocks[0].word,
+                                       axis="bot")
             logger.debug("Next Right: %r", next_right.blocks[0].word)
             logger.debug("Next Bot: %r", next_bot.blocks[0].word)
 
-    return string_set, block_set
+    return block_set
+
+
+def union(context: BlockSet):
+    return context
+
+
+def intersection(context: BlockSet):
+    return context

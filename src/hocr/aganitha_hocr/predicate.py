@@ -3,8 +3,8 @@ from typing import Dict
 
 
 class Predicate(object):
-    def __init__(self, anchor:Dict):
-        self.anchor = anchor
+    def __init__(self, anchor:str):
+        self.anchor = str
 
     def check(self, context: BlockSet) -> bool:
         pass
