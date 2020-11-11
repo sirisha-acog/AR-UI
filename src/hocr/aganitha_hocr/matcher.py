@@ -4,6 +4,7 @@ from typing import Optional, List, Union, Tuple, Any
 
 
 class Matcher(object):
+
     def match_rule(self, context: BlockSet) -> Any:
         pass
 

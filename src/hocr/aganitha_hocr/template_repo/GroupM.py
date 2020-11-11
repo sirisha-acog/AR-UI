@@ -15,7 +15,49 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class TopRightDateMatcher(Matcher):
+# Checkers
+
+class TopLeftCustomerNameChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, self.anchor, "word")
+        if len(block_set) > 0:
+            return True
+
+        return False
+
+
+class TopRightCheckNumberChecker(Predicate):
+
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, self.anchor, "word")
+        if len(block_set) > 0:
+            return True
+
+        return False
+
+
+class TopRightCheckDateChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, self.anchor, "word")
+        if len(block_set) > 0:
+            return True
+
+        return False
+
+
+class TopRightCheckAmountChecker(Predicate):
+
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, self.anchor, "word")
+        if len(block_set) > 0:
+            return True
+
+        return False
+
+
+# Matchers
+
+class TopRightCheckDateMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[Any]:
         context = right(top(context, argument=40), 50)
         block_set = context.get_blockset_by_query("Check Date")
@@ -30,77 +72,78 @@ class TopRightDateMatcher(Matcher):
             return [date]
 
 
-class TopRightCheckMatcher(Matcher):
+class TopRightCheckNumberMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[Any]:
-        context = right(top(context, argument=30), 30)
-        block_set = context.get_blockset_by_query("Check No.")
-        if len(block_set.blocks) == 2:
-            check_num = nearest(context, block_set.blocks[0], axis="right")
-            # Regex Validations
-            if not re.match(r'[0-9]', check_num.blocks[0].word):
-                logger.debug("Exception!!!")
-            return [check_num.blocks[0].word]
 
-
-class TopRightCheckNumberChecker(Predicate):
-
-    def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "word")
-        if len(block_set) > 0:
-            return True
-
-        return False
-
-
-class TopRightDateChecker(Predicate):
-    def check(self, context: BlockSet) -> bool:
-        context = right(top(context, argument=40), 50)
-        for key, value in self.anchor.items():
-            string_set, block_set = get_text(context, key, "word")
-
-            if len(string_set) > 0:
-                self.anchor.update({key: block_set})
-                return True
-
-        return False
-
-
-class TopLeftCustomerNameChecker(Predicate):
-    def check(self, context: BlockSet) -> bool:
-        context = left(top(context, argument=40), 30)
-        for key, value in self.anchor.items():
-            string_set, block_set = get_text(context, key, "word")
-
-            if len(string_set) > 0:
-                self.anchor.update({key: block_set})
-                return True
-
-        return False
+        check_number = nearest(context,  axis="right")
+        # Regex Validations
+        if not re.match(r'[0-9]', check_num.blocks[0].word):
+            logger.debug("Exception!!!")
+        return [check_num.blocks[0].word]
 
 
 class GroupM(Extractor):
 
     def __init__(self):
-        self.check_number = None
-        self.check_date = None
-
-        self.check_amount = {"CheckAmount": []}
-        self.table_header = {"column": ["Invoice Number", "Period",
-                                        "Media Client/Product", "Net Amount"]}
-        self.total = {"TOTAL": []}
+        self.check_number_blockset: BlockSet = None
+        self.check_date_blockset: BlockSet = None
+        self.check_amount_blockset: BlockSet = None
+        self.table_header_list: List = ["Invoice Number", "Period", "Media Client/Product", "Net Amount"]
+        self.invoice_number_blockset: BlockSet = None
+        self.period_blockset: BlockSet = None
+        self.media_client_blockset: BlockSet = None
+        self.net_amount_blockset: BlockSet = None
+        self.total_blockset: BlockSet = None
 
     def match(self, context: BlockSet) -> bool:
-        status_list = []
-        # check number match
-        context = right(top(context, argument=40), 50)
-        if TopRightCheckNumberChecker(anchor="CheckNo.").check(context):
-            self.check_number = context
+        status_list: List = []
 
-        # date number check
+        # customer-name match
+        customer_name_context = left(top(context, argument=30), 40)
+        customer_name_1_status = TopLeftCustomerNameChecker(anchor="WAVEMAKER").check(customer_name_context)
+        customer_name_2_status = TopLeftCustomerNameChecker(anchor="GROUPM").check(customer_name_context)
+        if customer_name_1_status or customer_name_2_status:  # append customer name status to overall status lit
+            status_list.append(True)
+        else:
+            status_list.append(False)
+
+        # check-number match
+        check_number_context = right(top(context, argument=40), 50)
+        check_number_status = TopRightCheckNumberChecker(anchor="CheckNo.").check(check_number_context)
+        if check_number_status:
+            self.check_number_blockset = check_number_context
+
+        status_list.append(check_number_status)  # append check number status to overall status list
+
+        # check-date match
+        check_date_context = right(top(context, argument=40), 50)
+        check_date_status = TopRightCheckDateChecker(anchor="CheckDate").check(check_date_context)
+        if check_date_status:
+            self.check_date_blockset = check_date_context
+
+        status_list.append(check_date_status)  # append check date status to overall status list
+
+        # check-amount match
+        check_amount_context = right(top(context, argument=40), 50)
+        check_amount_status = TopRightCheckAmountChecker(anchor="CheckAmount").check(check_amount_context)
+        if check_amount_status:
+            self.check_amount_blockset = check_amount_context
+
+        status_list.append(check_amount_status)  # append check amount status to overall status list
 
         return True
 
     def extract(self, context: BlockSet) -> List[Any]:
         extracted_params = {}
+
+        # match and extract check-number
+        check_number = TopRightCheckNumberMatcher().match_rule(self.check_number_blockset)
+
+
+        # match and extract check-date
+
+        # match and extract check-amount
+
+
 
         return extracted_params
