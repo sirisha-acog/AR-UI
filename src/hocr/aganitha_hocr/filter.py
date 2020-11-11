@@ -67,21 +67,30 @@ def nearest(context: BlockSet, anchor: Union[Block, BlockSet], axis: str) -> Blo
         right_coord_of_anchor = anchor.x_bot_right
         blocks = get_blocks_by_region(context, x_top_left=right_coord_of_anchor, y_top_left=context.y_top_left,
                                       x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
-        default = blocks[0]
+        default = None
+        min_dist = float('inf')
         if len(blocks) != 0:
             for block in blocks:
-                if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                if euclidean([block.x_top_left, ((block.y_bot_right - block.y_top_left)/2) + block.y_top_left],
+                             [anchor.x_bot_right, ((anchor.y_bot_right - anchor.y_top_left)/2) + anchor.y_top_left]) < min_dist:
+                    min_dist = euclidean([block.x_top_left, ((block.y_bot_right - block.y_top_left)/2) + block.y_top_left],
+                             [anchor.x_bot_right, ((anchor.y_bot_right - anchor.y_top_left)/2) + anchor.y_top_left])
                     default = block
+                    # print("Block: ", default.word, " Current Dist: ", euclidean([block.x_top_left, (block.y_bot_right-block.y_top_left)/2], [anchor.x_bot_right, (anchor.y_bot_right - anchor.y_top_left)/2]) ," Distance: ", min_dist)
         return BlockSet(parent_doc=context.parent_doc, blocks=[default])
 
     elif axis.lower() == "left":
         left_coord_of_anchor = anchor.x_top_left
         blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
                                       x_bot_right=left_coord_of_anchor, y_bot_right=context.y_bot_right)
-        default = blocks[0]
+        default = None
+        min_dist = float('inf')
         if len(blocks) != 0:
             for block in blocks:
-                if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                if euclidean([block.x_bot_right, ((block.y_bot_right - block.y_top_left)/2) + block.y_top_left],
+                             [anchor.x_top_left, ((anchor.y_bot_right - anchor.y_top_left)/2) + anchor.y_top_left]) < min_dist:
+                    min_dist = euclidean([block.x_bot_right, ((block.y_bot_right - block.y_top_left)/2) + block.y_top_left],
+                             [anchor.x_top_left, ((anchor.y_bot_right - anchor.y_top_left)/2) + anchor.y_top_left])
                     default = block
         return BlockSet(parent_doc=context.parent_doc, blocks=[default])
 
@@ -89,10 +98,14 @@ def nearest(context: BlockSet, anchor: Union[Block, BlockSet], axis: str) -> Blo
         top_coord_of_anchor = anchor.y_top_left
         blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
                                       x_bot_right=context.x_bot_right, y_bot_right=top_coord_of_anchor)
-        default = blocks[0]
+        default = None
+        min_dist = float('inf')
         if len(blocks) != 0:
             for block in blocks:
-                if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                if euclidean([((block.x_bot_right-block.x_top_left)/2) + block.x_top_left, block.y_bot_right],
+                             [((anchor.x_bot_right - anchor.x_top_left)/2) + anchor.x_top_left, anchor.y_top_left]) < min_dist:
+                    min_dist = euclidean([((block.x_bot_right-block.x_top_left)/2) + block.x_top_left, block.y_bot_right],
+                                         [((anchor.x_bot_right - anchor.x_top_left)/2) + anchor.x_top_left, anchor.y_top_left])
                     default = block
         return BlockSet(parent_doc=context.parent_doc, blocks=[default])
 
@@ -100,14 +113,21 @@ def nearest(context: BlockSet, anchor: Union[Block, BlockSet], axis: str) -> Blo
         bot_coord_of_anchor = anchor.y_bot_right
         blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=bot_coord_of_anchor,
                                       x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
-        default = blocks[0]
+        default = None
+        min_dist = float('inf')
         if len(blocks) != 0:
             for block in blocks:
-                if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                if euclidean([((block.x_bot_right - block.x_top_left) / 2) + block.x_top_left, block.y_top_left],
+                             [((anchor.x_bot_right - anchor.x_top_left) / 2) + anchor.x_top_left,
+                              anchor.y_bot_right]) < min_dist:
+                    min_dist = euclidean([((block.x_bot_right - block.x_top_left) / 2) + block.x_top_left, block.y_top_left],
+                             [((anchor.x_bot_right - anchor.x_top_left) / 2) + anchor.x_top_left,
+                              anchor.y_bot_right])
                     default = block
         return BlockSet(parent_doc=context.parent_doc, blocks=[default])
 
 
+# TODO Modify nearest_by_text() according to original nearest logic
 def nearest_by_text(context: BlockSet, anchor: Union[Block, BlockSet], query: str, axis: str) -> BlockSet:
     """
     Distance between centres should give use the nearest block
@@ -222,7 +242,8 @@ def union(context1: BlockSet, context2: BlockSet) -> BlockSet:
     new_x_bot_right = max(context1.x_bot_right, context2.x_bot_right)
     new_y_bot_right = max(context1.y_bot_right, context2.y_bot_right)
     blocks = context1.blocks + context2.blocks
-    return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left, x_bot_right=new_x_bot_right,
+    return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left,
+                    x_bot_right=new_x_bot_right,
                     y_bot_right=new_y_bot_right, blocks=blocks)
 
 

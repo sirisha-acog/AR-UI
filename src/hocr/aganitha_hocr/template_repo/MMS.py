@@ -56,6 +56,32 @@ class TopRightAmountChecker(Predicate):
             return False
 
 
+class BottomLeftInvoiceDateChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        list_of_blocks = get_text(context, self.anchor,
+                                  level="phrase")  # returns a List[Block] for now. Need to update.
+        logger.debug("In BottomLeftInvoiceDateChecker")
+        if len(list_of_blocks) == 2:
+            logger.debug("True In BottomLeftInvoiceDateChecker")
+            return True
+        else:
+            logger.debug("False In BottomLeftInvoiceDateChecker")
+            return False
+
+
+class BottomLeftInvoiceNumberChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        list_of_blocks = get_text(context, self.anchor,
+                                  level="phrase")  # returns a List[Block] for now. Need to update.
+        logger.debug("In BottomLeftInvoiceDateChecker")
+        if len(list_of_blocks) == 2:
+            logger.debug("True In BottomLeftInvoiceDateChecker")
+            return True
+        else:
+            logger.debug("False In BottomLeftInvoiceDateChecker")
+            return False
+
+
 # MATCHERS
 
 class TopRightDateMatcher(Matcher):
@@ -102,6 +128,13 @@ class TopRightAmountMatcher(Matcher):
                 return amount.blocks[0].word
 
 
+class ExtractTable(Matcher):
+    def match_rule(self, context: BlockSet) -> Any:
+        """
+        Return Dict
+        """
+
+
 class InvoiceDateMatcher(Matcher):
     pass
 
@@ -143,6 +176,17 @@ class MMS(Extractor):
             self.amount_paid = context_amount_paid
         status_list.append(TopRightAmountChecker(anchor="AMOUNT PAID:").check(context_amount_paid))
 
+        # Check Invoice date in table
+        context_invoice_date = left(bot(context, argument=60), argument=30)
+        if BottomLeftInvoiceDateChecker(anchor="Invoice Date").check(context_invoice_date):
+            self.invoice_date = context_invoice_date
+        status_list.append(BottomLeftInvoiceDateChecker(anchor="Invoice Date").check(context_invoice_date))
+
+        # Check invoice number in table
+        context_invoice_number = left(bot(context, argument=60), argument=60)
+        if BottomLeftInvoiceNumberChecker(anchor="Invoice Number").check(context_invoice_number):
+            self.invoice_number = context_invoice_number
+        status_list.append(BottomLeftInvoiceNumberChecker(anchor="Invoice Number").check(context_invoice_number))
         return all(status_list)
 
     def extract(self) -> List[Any]:
