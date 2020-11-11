@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: 1. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
 # TODO: 2. Given a query containing multiple strings, we should be able to return union or intersection of all blocksets
+# TODO: 3. Given a pattern in nearest filter, we should be able to get blockset matching the pattern
 
 def get_blocks_by_region(context: BlockSet, x_top_left: int, y_top_left: int,
                          x_bot_right: int, y_bot_right) -> List[Block]:
@@ -222,7 +223,8 @@ def union(context1: BlockSet, context2: BlockSet) -> BlockSet:
     new_x_bot_right = max(context1.x_bot_right, context2.x_bot_right)
     new_y_bot_right = max(context1.y_bot_right, context2.y_bot_right)
     blocks = context1.blocks + context2.blocks
-    return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left, x_bot_right=new_x_bot_right,
+    return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left,
+                    x_bot_right=new_x_bot_right,
                     y_bot_right=new_y_bot_right, blocks=blocks)
 
 
