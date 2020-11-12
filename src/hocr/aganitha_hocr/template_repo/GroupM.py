@@ -33,17 +33,21 @@ class TopRightCheckNumberChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, self.anchor, "word")
         if len(block_set) > 0:
+            logger.info('String Check number found!: %r', self.anchor)
             return True
 
+        logger.info('String Check number not found!: %r', self.anchor)
         return False
 
 
 class TopRightCheckDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, self.anchor, "word")
+        logger.info('String Check date found!: %r', self.anchor)
         if len(block_set) > 0:
             return True
 
+        logger.info('String Check date not found!: %r', self.anchor)
         return False
 
 
@@ -52,8 +56,10 @@ class TopRightCheckAmountChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, self.anchor, "word")
         if len(block_set) > 0:
+            logger.info('String Check amount found!: %r', self.anchor)
             return True
 
+        logger.info('String Check amount not found!: %r', self.anchor)
         return False
 
 
@@ -62,8 +68,10 @@ class BotTotalAmountChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, self.anchor, "word")
         if len(block_set) > 0:
+            logger.info('String total found!: %r', self.anchor)
             return True
 
+        logger.info('String total not found!: %r', self.anchor)
         return False
 
 
@@ -83,7 +91,7 @@ class TopRightCheckNumberMatcher(Matcher):
 
 
 class TopRightCheckDateMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[Any]:
+    def match_rule(self, context: BlockSet) -> List[str]:
         anchor_blockset = get_text(context, self.anchor, level="word")
         check_date_blockset = nearest(context, anchor_blockset, axis="right")
 
