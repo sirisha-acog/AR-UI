@@ -1,8 +1,9 @@
-from typing import List, Union
+from typing import List, Union, Dict
 
 from src.hocr.aganitha_hocr.object_model import BlockSet, Block
 from scipy.spatial.distance import euclidean
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -12,185 +13,242 @@ logger = logging.getLogger(__name__)
 # TODO: 7. Given a list of blocks, convert to a synthetic block(provenance information)
 # TODO: 1. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
 # TODO: 4. Fix signatures to take context and named_arguments(Dict) or create base filter class which allows to impose signature
+#
 
-
-def get_blocks_by_region(context: BlockSet, x_top_left: int, y_top_left: int,
-                         x_bot_right: int, y_bot_right) -> List[Block]:
+def get_blocks_by_region(context: BlockSet, named_params: Dict) -> List[Block]:
     block_list = []
     for block in context.blocks:
-        if (block.x_top_left >= x_top_left) and (block.y_top_left >= y_top_left) and (block.x_bot_right <= x_bot_right) \
-                and (block.y_bot_right <= y_bot_right):
+        if (block.x_top_left >= named_params['x_top_left']) and (block.y_top_left >= named_params['y_top_left']) and (
+                block.x_bot_right <= named_params['x_bot_right']) \
+                and (block.y_bot_right <= named_params['y_bot_right']):
             block_list.append(block)
     return block_list
 
 
-def top(context: BlockSet, argument: float = 100, percentage: bool = True) -> BlockSet:
-    blocks = get_blocks_by_region(context, x_top_left=context.x_top_left,
-                                  y_top_left=context.y_top_left, x_bot_right=context.x_bot_right,
-                                  y_bot_right=int(context.y_bot_right * argument * 0.01))
+def top(context: BlockSet, named_params: Dict) -> BlockSet:
+    blocks = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
+                                                         'y_top_left': context.y_top_left,
+                                                         'x_bot_right': context.x_bot_right,
+                                                         'y_bot_right': int(
+                                                             context.y_bot_right * named_params['argument'] * 0.01)})
 
     return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left,
                     y_top_left=context.y_top_left, x_bot_right=context.x_bot_right,
-                    y_bot_right=int(context.y_bot_right * argument * 0.01), blocks=blocks)
+                    y_bot_right=int(context.y_bot_right * named_params['argument'] * 0.01), blocks=blocks)
 
 
-def bot(context: BlockSet, argument: float = 100, percentage: bool = True) -> BlockSet:
-    new_y_top_left = context.y_bot_right - ((context.y_bot_right - context.y_top_left) * argument * 0.01)
-    blocks = get_blocks_by_region(context, x_top_left=context.x_top_left,
-                                  y_top_left=int(new_y_top_left), x_bot_right=context.x_bot_right,
-                                  y_bot_right=context.y_bot_right)
+def bot(context: BlockSet, named_params: Dict) -> BlockSet:
+    new_y_top_left = context.y_bot_right - (
+            (context.y_bot_right - context.y_top_left) * named_params['argument'] * 0.01)
+    blocks = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
+                                                         'y_top_left': int(new_y_top_left),
+                                                         'x_bot_right': context.x_bot_right,
+                                                         'y_bot_right': context.y_bot_right})
     return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left,
                     y_top_left=int(new_y_top_left), x_bot_right=context.x_bot_right,
                     y_bot_right=context.y_bot_right, blocks=blocks)
 
 
-def right(context: BlockSet, argument: float = 100, percentage: bool = True) -> BlockSet:
-    new_x_top_left = context.x_bot_right - ((context.x_bot_right - context.x_top_left) * argument * 0.01)
-    blocks = get_blocks_by_region(context, x_top_left=int(new_x_top_left),
-                                  y_top_left=context.y_top_left, x_bot_right=context.x_bot_right,
-                                  y_bot_right=context.y_bot_right)
+def right(context: BlockSet, named_params: Dict) -> BlockSet:
+    new_x_top_left = context.x_bot_right - (
+            (context.x_bot_right - context.x_top_left) * named_params['argument'] * 0.01)
+    blocks = get_blocks_by_region(context, named_params={'x_top_left': int(new_x_top_left),
+                                                         'y_top_left': context.y_top_left,
+                                                         'x_bot_right': context.x_bot_right,
+                                                         'y_bot_right': context.y_bot_right})
     return BlockSet(parent_doc=context.parent_doc, x_top_left=int(new_x_top_left),
                     y_top_left=context.y_top_left, x_bot_right=context.x_bot_right,
                     y_bot_right=context.y_bot_right, blocks=blocks)
 
 
-def left(context: BlockSet, argument: float = 100, percentage: bool = True) -> BlockSet:
-    blocks = get_blocks_by_region(context, x_top_left=context.x_top_left,
-                                  y_top_left=context.y_top_left, x_bot_right=int(context.x_bot_right * argument * 0.01),
-                                  y_bot_right=context.y_bot_right)
+def left(context: BlockSet, named_params: Dict) -> BlockSet:
+    blocks = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
+                                                         'y_top_left': context.y_top_left,
+                                                         'x_bot_right': int(
+                                                             context.x_bot_right * named_params['argument'] * 0.01),
+                                                         'y_bot_right': context.y_bot_right})
     return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left,
-                    y_top_left=context.y_top_left, x_bot_right=int(context.x_bot_right * argument * 0.01),
+                    y_top_left=context.y_top_left,
+                    x_bot_right=int(context.x_bot_right * named_params['argument'] * 0.01),
                     y_bot_right=context.y_bot_right, blocks=blocks)
 
 
-def nearest(context: BlockSet, anchor: Union[Block, BlockSet], axis: str) -> BlockSet:
+def nearest(context: BlockSet, named_params: Dict) -> BlockSet:
     """
-    Distance between centres should give use the nearest block
+    Distance between edges should give use the nearest block
     """
-    if axis.lower() == "right":
-        right_coord_of_anchor = anchor.x_bot_right
-        blocks = get_blocks_by_region(context, x_top_left=right_coord_of_anchor, y_top_left=context.y_top_left,
-                                      x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
+    if named_params['axis'].lower() == "right":
+        right_coord_of_anchor = named_params['anchor'].x_bot_right
+        blocks = get_blocks_by_region(context, named_params={'x_top_left': right_coord_of_anchor,
+                                                             'y_top_left': context.y_top_left,
+                                                             'x_bot_right': context.x_bot_right,
+                                                             'y_bot_right': context.y_bot_right})
         default = None
         min_dist = float('inf')
         if len(blocks) != 0:
             for block in blocks:
-                if euclidean([block.x_top_left, ((block.y_bot_right - block.y_top_left)/2) + block.y_top_left],
-                             [anchor.x_bot_right, ((anchor.y_bot_right - anchor.y_top_left)/2) + anchor.y_top_left]) < min_dist:
-                    min_dist = euclidean([block.x_top_left, ((block.y_bot_right - block.y_top_left)/2) + block.y_top_left],
-                             [anchor.x_bot_right, ((anchor.y_bot_right - anchor.y_top_left)/2) + anchor.y_top_left])
+                if euclidean([block.x_top_left, ((block.y_bot_right - block.y_top_left) / 2) + block.y_top_left],
+                             [named_params['anchor'].x_bot_right,
+                              ((named_params['anchor'].y_bot_right - named_params['anchor'].y_top_left) / 2) +
+                              named_params['anchor'].y_top_left]) < min_dist:
+                    min_dist = euclidean(
+                        [block.x_top_left, ((block.y_bot_right - block.y_top_left) / 2) + block.y_top_left],
+                        [named_params['anchor'].x_bot_right,
+                         ((named_params['anchor'].y_bot_right - named_params['anchor'].y_top_left) / 2) + named_params[
+                             'anchor'].y_top_left])
                     default = block
-                    # print("Block: ", default.word, " Current Dist: ", euclidean([block.x_top_left, (block.y_bot_right-block.y_top_left)/2], [anchor.x_bot_right, (anchor.y_bot_right - anchor.y_top_left)/2]) ," Distance: ", min_dist)
-        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
+                        x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
-    elif axis.lower() == "left":
-        left_coord_of_anchor = anchor.x_top_left
-        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
-                                      x_bot_right=left_coord_of_anchor, y_bot_right=context.y_bot_right)
+    elif named_params['axis'].lower() == "left":
+        left_coord_of_anchor = named_params['anchor'].x_top_left
+        blocks = get_blocks_by_region(context,
+                                      named_params={'x_top_left': context.x_top_left, 'y_top_left': context.y_top_left,
+                                                    'x_bot_right': left_coord_of_anchor,
+                                                    'y_bot_right': context.y_bot_right})
         default = None
         min_dist = float('inf')
         if len(blocks) != 0:
             for block in blocks:
-                if euclidean([block.x_bot_right, ((block.y_bot_right - block.y_top_left)/2) + block.y_top_left],
-                             [anchor.x_top_left, ((anchor.y_bot_right - anchor.y_top_left)/2) + anchor.y_top_left]) < min_dist:
-                    min_dist = euclidean([block.x_bot_right, ((block.y_bot_right - block.y_top_left)/2) + block.y_top_left],
-                             [anchor.x_top_left, ((anchor.y_bot_right - anchor.y_top_left)/2) + anchor.y_top_left])
+                if euclidean([block.x_bot_right, ((block.y_bot_right - block.y_top_left) / 2) + block.y_top_left],
+                             [named_params['anchor'].x_top_left,
+                              ((named_params['anchor'].y_bot_right - named_params['anchor'].y_top_left) / 2) +
+                              named_params['anchor'].y_top_left]) < min_dist:
+                    min_dist = euclidean(
+                        [block.x_bot_right, ((block.y_bot_right - block.y_top_left) / 2) + block.y_top_left],
+                        [named_params['anchor'].x_top_left,
+                         ((named_params['anchor'].y_bot_right - named_params['anchor'].y_top_left) / 2) + named_params[
+                             'anchor'].y_top_left])
                     default = block
-        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
+                        x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
-    elif axis.lower() == "top":
-        top_coord_of_anchor = anchor.y_top_left
-        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
-                                      x_bot_right=context.x_bot_right, y_bot_right=top_coord_of_anchor)
+    elif named_params['axis'].lower() == "top":
+        top_coord_of_anchor = named_params['anchor'].y_top_left
+        blocks = get_blocks_by_region(context,
+                                      named_params={'x_top_left': context.x_top_left,
+                                                    'y_top_left': context.y_top_left,
+                                                    'x_bot_right': context.x_bot_right,
+                                                    'y_bot_right': top_coord_of_anchor})
         default = None
         min_dist = float('inf')
         if len(blocks) != 0:
             for block in blocks:
-                if euclidean([((block.x_bot_right-block.x_top_left)/2) + block.x_top_left, block.y_bot_right],
-                             [((anchor.x_bot_right - anchor.x_top_left)/2) + anchor.x_top_left, anchor.y_top_left]) < min_dist:
-                    min_dist = euclidean([((block.x_bot_right-block.x_top_left)/2) + block.x_top_left, block.y_bot_right],
-                                         [((anchor.x_bot_right - anchor.x_top_left)/2) + anchor.x_top_left, anchor.y_top_left])
+                if euclidean([((block.x_bot_right - block.x_top_left) / 2) + block.x_top_left, block.y_bot_right],
+                             [((named_params['anchor'].x_bot_right - named_params['anchor'].x_top_left) / 2) +
+                              named_params['anchor'].x_top_left,
+                              named_params['anchor'].y_top_left]) < min_dist:
+                    min_dist = euclidean(
+                        [((block.x_bot_right - block.x_top_left) / 2) + block.x_top_left, block.y_bot_right],
+                        [((named_params['anchor'].x_bot_right - named_params['anchor'].x_top_left) / 2) + named_params[
+                            'anchor'].x_top_left, named_params['anchor'].y_top_left])
                     default = block
-        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
+                        x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
-    elif axis.lower() == "bot":
-        bot_coord_of_anchor = anchor.y_bot_right
-        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=bot_coord_of_anchor,
-                                      x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
+    elif named_params['axis'].lower() == "bot":
+        bot_coord_of_anchor = named_params['anchor'].y_bot_right
+        blocks = get_blocks_by_region(context,
+                                      named_params={'x_top_left': context.x_top_left,
+                                                    'y_top_left': bot_coord_of_anchor,
+                                                    'x_bot_right': context.x_bot_right,
+                                                    'y_bot_right': context.y_bot_right})
         default = None
         min_dist = float('inf')
         if len(blocks) != 0:
             for block in blocks:
                 if euclidean([((block.x_bot_right - block.x_top_left) / 2) + block.x_top_left, block.y_top_left],
-                             [((anchor.x_bot_right - anchor.x_top_left) / 2) + anchor.x_top_left,
-                              anchor.y_bot_right]) < min_dist:
-                    min_dist = euclidean([((block.x_bot_right - block.x_top_left) / 2) + block.x_top_left, block.y_top_left],
-                             [((anchor.x_bot_right - anchor.x_top_left) / 2) + anchor.x_top_left,
-                              anchor.y_bot_right])
+                             [((named_params['anchor'].x_bot_right - named_params['anchor'].x_top_left) / 2) +
+                              named_params['anchor'].x_top_left,
+                              named_params['anchor'].y_bot_right]) < min_dist:
+                    min_dist = euclidean(
+                        [((block.x_bot_right - block.x_top_left) / 2) + block.x_top_left, block.y_top_left],
+                        [((named_params['anchor'].x_bot_right - named_params['anchor'].x_top_left) / 2) + named_params[
+                            'anchor'].x_top_left,
+                         named_params['anchor'].y_bot_right])
                     default = block
-        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
+                        x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
 
-# TODO Modify nearest_by_text() according to original nearest logic
-def nearest_by_text(context: BlockSet, anchor: Union[Block, BlockSet], query: str, axis: str) -> BlockSet:
+def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
     """
     Distance between centres should give use the nearest block
     """
-    if axis.lower() == "right":
-        right_coord_of_anchor = anchor.x_bot_right
-        blocks = get_blocks_by_region(context, x_top_left=right_coord_of_anchor, y_top_left=context.y_top_left,
-                                      x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
+    if named_params['axis'].lower() == "right":
+        right_coord_of_anchor = named_params['anchor'].x_bot_right
+        blocks = get_blocks_by_region(context, named_params={'x_top_left': right_coord_of_anchor,
+                                                             'y_top_left': context.y_top_left,
+                                                             'x_bot_right': context.x_bot_right,
+                                                             'y_bot_right': context.y_bot_right})
 
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if query == block.word:
+                if re.search(named_params['pattern'], block.word):
                     default = block
-                    if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                    if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
+                                                                                          named_params['anchor'].centre):
                         default = block
-        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
+                        x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
-    elif axis.lower() == "left":
-        left_coord_of_anchor = anchor.x_top_left
-        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
-                                      x_bot_right=left_coord_of_anchor, y_bot_right=context.y_bot_right)
+    elif named_params['axis'].lower() == "left":
+        left_coord_of_anchor = named_params['anchor'].x_top_left
+        blocks = get_blocks_by_region(context,
+                                      named_params={'x_top_left': context.x_top_left,
+                                                    'y_top_left': context.y_top_left,
+                                                    'x_bot_right': left_coord_of_anchor,
+                                                    'y_bot_right': context.y_bot_right})
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if query == block.word:
+                if re.search(named_params['pattern'], block.word):
                     default = block
-                    if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                    if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
+                                                                                          named_params['anchor'].centre):
                         default = block
-        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
+                        x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
-    elif axis.lower() == "top":
-        top_coord_of_anchor = anchor.y_top_left
-        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
-                                      x_bot_right=context.x_bot_right, y_bot_right=top_coord_of_anchor)
+    elif named_params['axis'].lower() == "top":
+        top_coord_of_anchor = named_params['anchor'].y_top_left
+        blocks = get_blocks_by_region(context,
+                                      named_params={'x_top_left': context.x_top_left,
+                                                    'y_top_left': context.y_top_left,
+                                                    'x_bot_right': context.x_bot_right,
+                                                    'y_bot_right': top_coord_of_anchor})
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if query == block.word:
+                if re.search(named_params['pattern'], block.word):
                     default = block
-                    if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                    if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
+                                                                                          named_params['anchor'].centre):
                         default = block
-        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
+                        x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
-    elif axis.lower() == "bot":
-        bot_coord_of_anchor = anchor.y_bot_right
-        blocks = get_blocks_by_region(context, x_top_left=context.x_top_left, y_top_left=bot_coord_of_anchor,
-                                      x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right)
+    elif named_params['axis'].lower() == "bot":
+        bot_coord_of_anchor = named_params['anchor'].y_bot_right
+        blocks = get_blocks_by_region(context,
+                                      named_params={'x_top_left': context.x_top_left,
+                                                    'y_top_left': bot_coord_of_anchor,
+                                                    'x_bot_right': context.x_bot_right,
+                                                    'y_bot_right': context.y_bot_right})
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if query == block.word:
+                if re.search(named_params['pattern'], block.word):
                     default = block
-                    if euclidean(block.centre, anchor.centre) < euclidean(default.centre, anchor.centre):
+                    if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
+                                                                                          named_params['anchor'].centre):
                         default = block
-        return BlockSet(parent_doc=context.parent_doc, blocks=[default])
+        return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
+                        x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
 
-def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockSet, List[Block]]:
+def get_text(context: BlockSet, named_params: Dict) -> Union[BlockSet, List[Block]]:
     """
     Take input = [Paid, on, behalf, of]
     Want to bundle them together in a blockset.
@@ -209,11 +267,11 @@ def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockS
             if the block.word is text.next
             append the block to a blockset and return a new blockset.
     """
-    if level == "word":
-        return context.get_blockset_by_query(query)
-    elif level == "phrase":
+    if named_params['level'] == "word":
+        return context.get_blockset_by_query(named_params['query'])
+    elif named_params['level'] == "phrase":
         # Check if All the queries are present
-        query = query.split()
+        query = named_params['query'].split()
         status = True
         query_list = []
         for text in query:
@@ -227,10 +285,12 @@ def get_text(context: BlockSet, query: str, level: str = "word") -> Union[BlockS
         block_set = [base]
         for i in range(0, (len(query_list) - 1)):
             anchor_block_set = query_list[i]
-            next_right = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i + 1].blocks[0].word,
-                                         axis="right")
-            next_bot = nearest_by_text(context, anchor_block_set.blocks[0], query=query_list[i + 1].blocks[0].word,
-                                       axis="bot")
+            next_right = nearest_by_query(context, named_params={'anchor': anchor_block_set.blocks[0],
+                                                                 'pattern': query_list[i + 1].blocks[0].word,
+                                                                 'axis': "right"})
+            next_bot = nearest_by_query(context, named_params={'anchor': anchor_block_set.blocks[0],
+                                                               'pattern': query_list[i + 1].blocks[0].word,
+                                                               'axis': "bot"})
             logger.debug("Next Right: %r", next_right.blocks[0].word)
             logger.debug("Next Bot: %r", next_bot.blocks[0].word)
             block_set.append(next_right.blocks[0])
@@ -273,8 +333,11 @@ def intersection(context1: BlockSet, context2: BlockSet) -> BlockSet:
         new_y_top_left = max(context1.y_top_left, context2.y_top_left)
         new_x_bot_right = min(context1.x_bot_right, context2.x_bot_right)
         new_y_bot_right = min(context1.y_bot_right, context2.y_bot_right)
-        blocks = get_blocks_by_region(context=context1, x_top_left=new_x_top_left, y_top_left=new_y_top_left,
-                                      x_bot_right=new_x_bot_right, y_bot_right=new_y_bot_right)
+        blocks = get_blocks_by_region(context=context1,
+                                      named_params={'x_top_left': new_x_top_left,
+                                                    'y_top_left': new_y_top_left,
+                                                    'x_bot_right': new_x_bot_right,
+                                                    'y_bot_right': new_y_bot_right})
         return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left,
                         x_bot_right=new_x_bot_right,
                         y_bot_right=new_y_bot_right, blocks=blocks)
