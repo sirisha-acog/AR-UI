@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 # TODO: 1. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
 # TODO: 2. Given a query containing multiple strings, we should be able to return union or intersection of all blocksets
 # TODO: 3. Given a pattern in nearest filter, we should be able to get blockset matching the pattern
+# TODO: 4. Fix signatures to take context and named_arguments(Dict) or create base filter class which allows to impose signature
+
 
 def get_blocks_by_region(context: BlockSet, x_top_left: int, y_top_left: int,
                          x_bot_right: int, y_bot_right) -> List[Block]:

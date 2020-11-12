@@ -21,8 +21,10 @@ class TopLeftCustomerNameChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, self.anchor, "word")
         if len(block_set) > 0:
+            logger.info('Customer name found!: %r', self.anchor)
             return True
 
+        logger.info('Customer name not found!: %r', self.anchor)
         return False
 
 
@@ -55,31 +57,68 @@ class TopRightCheckAmountChecker(Predicate):
         return False
 
 
+class BotTotalAmountChecker(Predicate):
+
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, self.anchor, "word")
+        if len(block_set) > 0:
+            return True
+
+        return False
+
+
 # Matchers
+
+class TopRightCheckNumberMatcher(Matcher):
+
+    def match_rule(self, context: BlockSet) -> List[str]:
+        anchor_blockset = get_text(context, self.anchor, level="word")
+        check_number_blockset = nearest(context, anchor_blockset, axis="right")
+
+        # Regex Validations
+        if not re.match(self.pattern, check_number_blockset.blocks[0].word):
+            logger.debug("Check number do not match pattern!")
+            raise Exception
+        return [check_number_blockset.blocks[0].word]
+
 
 class TopRightCheckDateMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[Any]:
-        context = right(top(context, argument=40), 50)
-        block_set = context.get_blockset_by_query("Check Date")
-        if len(block_set.blocks) == 2:
-            date = nearest(context, block_set.blocks[0], axis="right")
-            # Regex Validations
-            if not re.match(r'\d{2}\/\d{2}\/\d{4}', date.blocks[0].word):
-                logger.debug("Date Does Not Match pattern!!")
-                raise Exception
-            # Call Helper function to convert the date format
-            date = parse(date)
-            return [date]
+        anchor_blockset = get_text(context, self.anchor, level="word")
+        check_date_blockset = nearest(context, anchor_blockset, axis="right")
 
-
-class TopRightCheckNumberMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[Any]:
-
-        check_number = nearest(context,  axis="right")
         # Regex Validations
-        if not re.match(r'[0-9]', check_num.blocks[0].word):
-            logger.debug("Exception!!!")
-        return [check_num.blocks[0].word]
+        if not re.match(self.pattern, check_date_blockset.blocks[0].word):
+            logger.debug("Date Does Not Match pattern!!")
+            raise Exception
+
+        return [check_date_blockset.blocks[0].word]
+
+
+class TopRightCheckAmountMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[Any]:
+        anchor_blockset = get_text(context, self.anchor, level="word")
+        check_amount_blockset = nearest(context, anchor_blockset, axis="right")
+
+        # Regex Validations
+        if not re.match(self.pattern, check_amount_blockset.blocks[0].word):
+            logger.debug("Check amount Does Not Match pattern!!")
+            raise Exception
+
+        return [check_amount_blockset.blocks[0].word]
+
+
+class BotTotalAmountMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[Any]:
+        anchor_blockset = get_text(context, self.anchor, level="word")
+        total_amount_blockset = nearest(context, anchor_blockset, axis="right")
+
+        # Regex Validations
+        if not re.match(self.pattern, total_amount_blockset.blocks[0].word):
+            logger.debug("Total amount Does Not Match pattern!!")
+            raise Exception
+
+        return [total_amount_blockset.blocks[0].word]
 
 
 class GroupM(Extractor):
@@ -131,19 +170,43 @@ class GroupM(Extractor):
 
         status_list.append(check_amount_status)  # append check amount status to overall status list
 
-        return True
+        # total-amount match
+        total_amount_context = bot(context, argument=20)
+        total_amount_status = BotTotalAmountChecker(anchor="TOTAL").check(total_amount_context)
+        if total_amount_status:
+            self.total_blockset = total_amount_context
 
-    def extract(self, context: BlockSet) -> List[Any]:
+        status_list.append(total_amount_status)
+
+        logger.debug('Results of all predicates: ', status_list)
+        if all(status_list):
+            return True
+        else:
+            return False
+
+    def extract(self, context: BlockSet) -> Dict[str, Any]:
         extracted_params = {}
 
         # match and extract check-number
-        check_number = TopRightCheckNumberMatcher().match_rule(self.check_number_blockset)
-
+        check_number = TopRightCheckNumberMatcher(anchor="CheckNo.", pattern=r'[0-9]').match_rule(
+            self.check_number_blockset)
+        check_number = int(check_number)  # transforming check number to integer
+        extracted_params.update({"Check number": check_number})
 
         # match and extract check-date
+        check_date = TopRightCheckDateMatcher(anchor="CheckDate", pattern=r'\d{2}\/\d{2}\/\d{4}').match_rule(
+            self.check_date_blockset)
+        extracted_params.update({"Check date": check_date})
 
         # match and extract check-amount
+        check_amount = TopRightCheckAmountMatcher(anchor="CheckAmount", pattern=r'\$[\d,\.]+').match_rule(
+            self.check_amount_blockset)
+        check_amount = float(check_amount.replace('$', '').replace(',', ''))  # transforming check amount to float
+        extracted_params.update({"Check amount": check_amount})
 
-
+        # match and extract total-amount
+        total_amount = BotTotalAmountMatcher(anchor="TOTAL", pattern=r'\$[\d,\.]+').match_rule(self.total_blockset)
+        total_amount = float(total_amount.replace('$', '').replace(',', ''))  # transforming total amount to float
+        extracted_params.update({"Total amount": total_amount})
 
         return extracted_params

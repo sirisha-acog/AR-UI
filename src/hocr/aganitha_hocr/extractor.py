@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Dict, Any
 
 from src.hocr.aganitha_hocr.matcher import Matcher
 from src.hocr.aganitha_hocr.object_model import BlockSet
@@ -6,9 +6,6 @@ from src.hocr.aganitha_hocr.predicate import Predicate
 
 
 class Extractor(object):
-    def __init__(self, matched_list: List[Matcher], predicate_list: List[Predicate]):
-        self.matched_list = matched_list
-        self.predicate_list = predicate_list
 
     def execute(self, context: BlockSet):
         if not self.match(context):
@@ -25,5 +22,5 @@ class Extractor(object):
         """
         pass
 
-    def extract(self, context: BlockSet) -> List[str]:
+    def extract(self, context: BlockSet) -> Dict[str,Any]:
         pass

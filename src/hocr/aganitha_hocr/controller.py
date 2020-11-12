@@ -5,8 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    page = Page('/home/adarsh/work/ar-automation/tmp/07.07.20-lb83143-1-2-addl-doc-01.jpg.hocr')
-    # page = Page('/Users/abhishek/Documents/CoxMedia-Crestfin/GroupM-SRA-1.hocr')
+    # page = Page('/home/adarsh/work/ar-automation/tmp/07.07.20-lb83143-1-2-addl-doc-01.jpg.hocr')
+    page = Page('/Users/abhishek/Documents/CoxMedia-Crestfin/GroupM-SRA-1.hocr')
     template = GroupM()
-    logger.debug("Match Output: %r", template.match(page.page_blockset))
-    logger.info("Extracted Params: %r", template.extract(page.page_blockset))
+    template.execute(page.page_blockset)
