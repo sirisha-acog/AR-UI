@@ -32,10 +32,11 @@ class TopRightDateChecker(Predicate):
 
 class TopRightCheckChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        list_of_blocks = get_text(context, named_params={'query': self.anchor,
-                                                         'level': "phrase"})  # returns a List[Block] for now. Need to update.
+        block_set = get_text(context, named_params={'query': self.anchor,
+                                                    'level': "phrase"})
+        block = block_set.get_synthetic_block()
         logger.debug("In TopRightCheckChecker")
-        if len(list_of_blocks) == 2:
+        if len(block.word.split()) == 2:
             logger.debug("True In TopRightCheckChecker")
             return True
         else:
@@ -45,10 +46,11 @@ class TopRightCheckChecker(Predicate):
 
 class TopRightAmountChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        list_of_blocks = get_text(context, named_params={'query': self.anchor,
-                                                         'level': "phrase"})  # returns a List[Block] for now. Need to update.
+        block_set = get_text(context, named_params={'query': self.anchor,
+                                                    'level': "phrase"})
+        block = block_set.get_synthetic_block()
         logger.debug("In TopRightCheckChecker")
-        if len(list_of_blocks) == 2:
+        if len(block.word.split()) == 2:
             logger.debug("True In TopRightCheckChecker")
             return True
         else:
@@ -58,10 +60,11 @@ class TopRightAmountChecker(Predicate):
 
 class BottomLeftInvoiceDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        list_of_blocks = get_text(context, named_params={'query': self.anchor,
-                                                         'level': "phrase"})  # returns a List[Block] for now. Need to update.
+        block_set = get_text(context, named_params={'query': self.anchor,
+                                                    'level': "phrase"})
+        block = block_set.get_synthetic_block()
         logger.debug("In BottomLeftInvoiceDateChecker")
-        if len(list_of_blocks) == 2:
+        if len(block.word.split()) == 2:
             logger.debug("True In BottomLeftInvoiceDateChecker")
             return True
         else:
@@ -71,10 +74,11 @@ class BottomLeftInvoiceDateChecker(Predicate):
 
 class BottomLeftInvoiceNumberChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        list_of_blocks = get_text(context, named_params={'query': self.anchor,
-                                                         'level': "phrase"})  # returns a List[Block] for now. Need to update.
+        block_set = get_text(context, named_params={'query': self.anchor,
+                                                    'level': "phrase"})
+        block = block_set.get_synthetic_block()
         logger.debug("In BottomLeftInvoiceNumberChecker")
-        if len(list_of_blocks) == 2:
+        if len(block.word.split()) == 2:
             logger.debug("True In BottomLeftInvoiceNumberChecker")
             return True
         else:
@@ -111,8 +115,7 @@ class TopRightDateMatcher(Matcher):
             if not re.match(self.pattern, month.blocks[0].word):
                 logger.debug("Date Does Not Match Exception!!")
             # Call Helper function to convert the date format
-            date = month.blocks[0].word + day.blocks[0].word + year.blocks[0].word
-            date = parse(date)
+            date = month.blocks[0].word + " " + day.blocks[0].word + " " + year.blocks[0].word
             return date
 
 
@@ -141,9 +144,17 @@ class TopRightAmountMatcher(Matcher):
 
 
 class BottomLeftInvoiceDateMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> Any:
+    def match_rule(self, context: BlockSet) -> List[str]:
         logger.debug("In BottomLeftInvoiceDateMatcher")
-        date_anchor = get_text(context, named_params={'query': self.anchor, 'level': "word"})
+        temp = []
+        for block in context.blocks:
+            if re.search(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
+
+
+class BottomLeftInvoiceNumberMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
         temp = []
         for block in context.blocks:
             if re.search(self.pattern, block.word):
@@ -214,7 +225,8 @@ class MMS(Extractor):
         # Check Amount in table
         context_amount_in_table = right(bot(context, named_params={'argument': 60}), named_params={'argument': 30})
         if BottomRightAmountChecker(anchor="Amount").check(context_amount_in_table):
-            self.amount = context_amount_in_table
+            amount_blockset = get_text(context_amount_in_table, named_params={'query': 'Amount', 'level': 'word'})
+
         status_list.append(BottomRightAmountChecker(anchor="Amount").check(context_amount_in_table))
 
         return all(status_list)
@@ -228,11 +240,19 @@ class MMS(Extractor):
         check_num = TopRightCheckMatcher(anchor="NUMBER:", pattern=r'[0-9]').match_rule(self.check_number)
         extracted_params["CHECK NUMBER"] = check_num
         # Match and Extract Amount Paid
-        amount = TopRightAmountMatcher(anchor="PAID:", pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(self.amount_paid)
+        amount = TopRightAmountMatcher(anchor="PAID:",
+                                       pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.amount_paid)
         extracted_params["AMOUNT PAID"] = amount
 
         # Match Invoice Date
-        inv_date = BottomLeftInvoiceDateMatcher(anchor="Date", pattern=r'(\d{2})[/.-](\d{2})[/.-](\d{2})$').match_rule(self.invoice_date)
+        inv_date = BottomLeftInvoiceDateMatcher(anchor="Date", pattern=r'(\d{2})[/.-](\d{2})[/.-](\d{2})$').match_rule(
+            self.invoice_date)
         extracted_params["Invoice Date"] = inv_date
+
+        # Match Invoice Number
+        inv_num = BottomLeftInvoiceDateMatcher(anchor="Number", pattern=r'(\d{7})[\-](\d{1})$').match_rule(
+            self.invoice_number)
+        extracted_params["Invoice Number"] = inv_num
 
         return extracted_params

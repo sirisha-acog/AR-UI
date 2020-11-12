@@ -32,6 +32,7 @@ class BlockSet(object):
         self.y_top_left = y_top_left
         self.x_top_left = x_top_left
         self.blocks = blocks
+        self.word = [block.word for block in self.blocks]
 
     def __len__(self):
         return len(self.blocks)
@@ -55,6 +56,32 @@ class BlockSet(object):
                             block.y_bot_right)
                 block_list.append(block)
         return BlockSet(parent_doc=self.parent_doc, blocks=block_list)
+
+    def get_synthetic_blockset(self) -> BlockSet_t:
+        """
+        Given a list of blocks create a synthetic blockset with appropriate x,y coordinates.
+        Assuming that the x_top_left, y_top_left, x_bot_right, y_bot_right == None
+        """
+        x_top_left = min([block.x_top_left for block in self.blocks])
+        y_top_left = min([block.y_top_left for block in self.blocks])
+        x_bot_right = max([block.x_bot_right for block in self.blocks])
+        y_bot_right = max([block.y_bot_right for block in self.blocks])
+        return BlockSet(parent_doc=self.parent_doc, x_top_left=x_top_left, y_top_left=y_top_left, x_bot_right=x_bot_right,
+                        y_bot_right=y_bot_right, blocks=self.blocks)
+
+    def get_synthetic_block(self) -> Block_t:
+        """
+        Given a list of blocks return a synthetic block
+        eg - Block("Invoice") + Block("Date") -> Block("Invoice Date")
+        """
+        x_top_left = min([block.x_top_left for block in self.blocks])
+        y_top_left = min([block.y_top_left for block in self.blocks])
+        x_bot_right = max([block.x_bot_right for block in self.blocks])
+        y_bot_right = max([block.y_bot_right for block in self.blocks])
+        word = [block.word for block in self.blocks]
+        word = ' '.join(word)
+        return Block(parent_doc=self.parent_doc, x_top_left=x_top_left, y_top_left=y_top_left, x_bot_right=x_bot_right,
+                     y_bot_right=y_bot_right, word=word)
 
 
 class Block(object):

@@ -8,12 +8,8 @@ import re
 logger = logging.getLogger(__name__)
 
 
-# TODO: 5. named arguments
-# TODO: 6. Given a list of blocks, convert to a blockset
-# TODO: 7. Given a list of blocks, convert to a synthetic block(provenance information)
-# TODO: 1. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
-# TODO: 4. Fix signatures to take context and named_arguments(Dict) or create base filter class which allows to impose signature
-#
+# TODO: 1. Try to refactor get_blocks_by_region()
+# TODO: 2. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
 
 def get_blocks_by_region(context: BlockSet, named_params: Dict) -> List[Block]:
     block_list = []
@@ -188,7 +184,8 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
                 if re.search(named_params['pattern'], block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
-                                                                                          named_params['anchor'].centre):
+                                                                                          named_params[
+                                                                                              'anchor'].centre):
                         default = block
         return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
                         x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
@@ -206,7 +203,8 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
                 if re.search(named_params['pattern'], block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
-                                                                                          named_params['anchor'].centre):
+                                                                                          named_params[
+                                                                                              'anchor'].centre):
                         default = block
         return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
                         x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
@@ -224,7 +222,8 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
                 if re.search(named_params['pattern'], block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
-                                                                                          named_params['anchor'].centre):
+                                                                                          named_params[
+                                                                                              'anchor'].centre):
                         default = block
         return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
                         x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
@@ -242,13 +241,14 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
                 if re.search(named_params['pattern'], block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
-                                                                                          named_params['anchor'].centre):
+                                                                                          named_params[
+                                                                                              'anchor'].centre):
                         default = block
         return BlockSet(parent_doc=context.parent_doc, x_top_left=default.x_top_left, y_top_left=default.y_top_left,
                         x_bot_right=default.x_bot_right, y_bot_right=default.y_bot_right, blocks=[default])
 
 
-def get_text(context: BlockSet, named_params: Dict) -> Union[BlockSet, List[Block]]:
+def get_text(context: BlockSet, named_params: Dict) -> BlockSet:
     """
     Take input = [Paid, on, behalf, of]
     Want to bundle them together in a blockset.
@@ -294,7 +294,8 @@ def get_text(context: BlockSet, named_params: Dict) -> Union[BlockSet, List[Bloc
             logger.debug("Next Right: %r", next_right.blocks[0].word)
             logger.debug("Next Bot: %r", next_bot.blocks[0].word)
             block_set.append(next_right.blocks[0])
-        return block_set
+
+        return BlockSet(parent_doc=context.parent_doc, blocks=block_set)
 
 
 def union(context1: BlockSet, context2: BlockSet) -> BlockSet:
@@ -317,7 +318,7 @@ def intersection(context1: BlockSet, context2: BlockSet) -> BlockSet:
         if yes:
             we want coordinates of intersection rectangle. find all blocks in that rectangle by
             get_blocks_by_region(context = context1, coords = [intersection_rectangel_coords])
-            return BlockSet withr elevant blocks
+            return BlockSet with relevant blocks
 
     """
     # If one rectangle is on left side of other
