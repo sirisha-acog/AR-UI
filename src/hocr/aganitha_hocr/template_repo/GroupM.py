@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class TopLeftCustomerNameChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "word")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "word"})
         if len(block_set) > 0:
             logger.info('Customer name found!: %r', self.anchor)
             return True
@@ -31,7 +31,7 @@ class TopLeftCustomerNameChecker(Predicate):
 class TopRightCheckNumberChecker(Predicate):
 
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "phrase")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
             logger.info('String Check number found!: %r', self.anchor)
             return True
@@ -42,7 +42,7 @@ class TopRightCheckNumberChecker(Predicate):
 
 class TopRightCheckDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "phrase")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         logger.info('String Check date found!: %r', self.anchor)
         if len(block_set) > 0:
             return True
@@ -54,7 +54,7 @@ class TopRightCheckDateChecker(Predicate):
 class TopRightCheckAmountChecker(Predicate):
 
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "phrase")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
             logger.info('String Check amount found!: %r', self.anchor)
             return True
@@ -66,7 +66,7 @@ class TopRightCheckAmountChecker(Predicate):
 class BotTotalAmountChecker(Predicate):
 
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "word")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "word"})
         if len(block_set) > 0:
             logger.info('String total found!: %r', self.anchor)
             return True
@@ -78,7 +78,7 @@ class BotTotalAmountChecker(Predicate):
 class LeftInvoiceNumberChecker(Predicate):
 
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "phrase")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
             logger.info('String Invoice Number found!: %r', self.anchor)
             return True
@@ -90,7 +90,7 @@ class LeftInvoiceNumberChecker(Predicate):
 class LeftPeriodChecker(Predicate):
 
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "word")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "word"})
         if len(block_set) > 0:
             logger.info('String Period found!: %r', self.anchor)
             return True
@@ -102,7 +102,7 @@ class LeftPeriodChecker(Predicate):
 class LeftMediaClientChecker(Predicate):
 
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "phrase")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
             logger.info('String Media Client/Product found!: %r', self.anchor)
             return True
@@ -114,7 +114,7 @@ class LeftMediaClientChecker(Predicate):
 class RightNetAmountChecker(Predicate):
 
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, self.anchor, "phrase")
+        block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
             logger.info('String Net Amount found!: %r', self.anchor)
             return True
@@ -128,8 +128,8 @@ class RightNetAmountChecker(Predicate):
 class TopRightCheckNumberMatcher(Matcher):
 
     def match_rule(self, context: BlockSet) -> List[str]:
-        anchor_blockset = get_text(context, self.anchor, level="phrase")
-        check_number_blockset = nearest(context, anchor_blockset, axis="right")
+        anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
+        check_number_blockset = nearest(context, named_params={"anchor": anchor_blockset, "axis": "right"})
 
         # Regex Validations
         if not re.match(self.pattern, check_number_blockset.blocks[0].word):
@@ -140,8 +140,8 @@ class TopRightCheckNumberMatcher(Matcher):
 
 class TopRightCheckDateMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
-        anchor_blockset = get_text(context, self.anchor, level="phrase")
-        check_date_blockset = nearest(context, anchor_blockset, axis="right")
+        anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
+        check_date_blockset = nearest(context, named_params={"anchor": anchor_blockset, "axis": "right"})
 
         # Regex Validations
         if not re.match(self.pattern, check_date_blockset.blocks[0].word):
@@ -153,8 +153,8 @@ class TopRightCheckDateMatcher(Matcher):
 
 class TopRightCheckAmountMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[Any]:
-        anchor_blockset = get_text(context, self.anchor, level="phrase")
-        check_amount_blockset = nearest(context, anchor_blockset, axis="right")
+        anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
+        check_amount_blockset = nearest(context, named_params={"anchor": anchor_blockset, "axis": "right"})
 
         # Regex Validations
         if not re.match(self.pattern, check_amount_blockset.blocks[0].word):
@@ -166,8 +166,8 @@ class TopRightCheckAmountMatcher(Matcher):
 
 class BotTotalAmountMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[Any]:
-        anchor_blockset = get_text(context, self.anchor, level="word")
-        total_amount_blockset = nearest(context, anchor_blockset, axis="right")
+        anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        total_amount_blockset = nearest(context, named_params={"anchor": anchor_blockset, "axis": "right"})
 
         # Regex Validations
         if not re.match(self.pattern, total_amount_blockset.blocks[0].word):
@@ -175,6 +175,21 @@ class BotTotalAmountMatcher(Matcher):
             raise Exception
 
         return [total_amount_blockset.blocks[0].word]
+
+
+class LeftInvoiceNumberMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[Any]:
+        anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        total_amount_blockset = nearest(context, named_params={"anchor": anchor_blockset, "axis": "right"})
+
+        # Regex Validations
+        if not re.match(self.pattern, total_amount_blockset.blocks[0].word):
+            logger.debug("Total amount Does Not Match pattern!!")
+            raise Exception
+
+        return [total_amount_blockset.blocks[0].word]
+
+
 
 
 class GroupM(Extractor):
@@ -194,7 +209,7 @@ class GroupM(Extractor):
         status_list: List = []
 
         # customer-name match
-        customer_name_context = left(top(context, argument=30), 40)
+        customer_name_context = left(top(context, named_params={"argument": 30}), named_params={"argument": 40})
         customer_name_1_status = TopLeftCustomerNameChecker(anchor="WAVEMAKER").check(customer_name_context)
         customer_name_2_status = TopLeftCustomerNameChecker(anchor="GROUPM").check(customer_name_context)
         if customer_name_1_status or customer_name_2_status:  # append customer name status to overall status lit
@@ -203,7 +218,7 @@ class GroupM(Extractor):
             status_list.append(False)
 
         # check-number match
-        check_number_context = right(top(context, argument=40), 50)
+        check_number_context = right(top(context, named_params={"argument": 40}), named_params={"argument": 50})
         check_number_status = TopRightCheckNumberChecker(anchor="Check No.").check(check_number_context)
         if check_number_status:
             self.check_number_blockset = check_number_context
@@ -211,7 +226,7 @@ class GroupM(Extractor):
         status_list.append(check_number_status)  # append check number status to overall status list
 
         # check-date match
-        check_date_context = right(top(context, argument=40), 50)
+        check_date_context = right(top(context, named_params={"argument": 40}), named_params={"argument": 50})
         check_date_status = TopRightCheckDateChecker(anchor="Check Date").check(check_date_context)
         if check_date_status:
             self.check_date_blockset = check_date_context
@@ -219,7 +234,7 @@ class GroupM(Extractor):
         status_list.append(check_date_status)  # append check date status to overall status list
 
         # check-amount match
-        check_amount_context = right(top(context, argument=40), 50)
+        check_amount_context = right(top(context, named_params={"argument": 40}), named_params={"argument": 50})
         check_amount_status = TopRightCheckAmountChecker(anchor="Check Amount").check(check_amount_context)
         if check_amount_status:
             self.check_amount_blockset = check_amount_context
@@ -227,7 +242,7 @@ class GroupM(Extractor):
         status_list.append(check_amount_status)  # append check amount status to overall status list
 
         # total-amount match
-        total_amount_context = bot(context, argument=20)
+        total_amount_context = bot(context, named_params={"argument": 20})
         total_amount_status = BotTotalAmountChecker(anchor="TOTAL").check(total_amount_context)
         if total_amount_status:
             self.total_blockset = total_amount_context
@@ -235,7 +250,7 @@ class GroupM(Extractor):
         status_list.append(total_amount_status)
 
         # invoice-number match
-        invoice_number_context = left(context, argument=20)
+        invoice_number_context = left(context, named_params={"argument": 20})
         invoice_number_status = LeftInvoiceNumberChecker(anchor="Invoice Number").check(invoice_number_context)
         if invoice_number_status:
             self.invoice_number_blockset = invoice_number_context
@@ -243,7 +258,7 @@ class GroupM(Extractor):
         status_list.append(invoice_number_status)
 
         # period match
-        period_context = left(context, argument=40)
+        period_context = left(context, named_params={"argument": 40})
         period_status = LeftPeriodChecker(anchor="Period").check(period_context)
         if period_status:
             self.period_blockset = period_context
@@ -251,7 +266,7 @@ class GroupM(Extractor):
         status_list.append(period_status)
 
         # media-client match
-        media_client_context = left(context, argument=40)
+        media_client_context = left(context, named_params={"argument": 40})
         media_client_status = LeftMediaClientChecker(anchor="Media Client/Product").check(period_context)
         if media_client_status:
             self.media_client_blockset = media_client_context
@@ -259,7 +274,7 @@ class GroupM(Extractor):
         status_list.append(media_client_status)
 
         # net-amount match
-        net_amount_context = right(context, argument=40)
+        net_amount_context = right(context, named_params={"argument": 40})
         net_amount_status = RightNetAmountChecker(anchor="Net Amount").check(net_amount_context)
         if net_amount_status:
             self.net_amount_blockset = net_amount_context
@@ -317,6 +332,5 @@ class GroupM(Extractor):
         net_amount = RightNetAmountMatcher(anchor="Net Amount").match_rule(self.net_amount_blockset)
         # net_amount = float(net_amount.replace('$', '').replace(',', ''))  # transforming net amount to float
         extracted_params.update({"Net Amount": net_amount})
-
 
         return extracted_params
