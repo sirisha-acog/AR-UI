@@ -4,9 +4,9 @@ from typing import Optional, List, Union, Tuple, Any
 
 class Matcher(object):
 
-    def __init__(self, anchor: str, pattern: str):
-        self.anchor = None
-        self.pattern = None
+    def __init__(self, anchor: Optional[str], pattern: Optional[str]):
+        self.anchor = anchor
+        self.pattern = pattern
 
     def match_rule(self, context: BlockSet) -> List[str]:
         pass
