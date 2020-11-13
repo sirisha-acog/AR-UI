@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 # importing project dependencies
-from typing import Any, List, Union
+from typing import Any, List, Dict
 
 from src.hocr.aganitha_hocr.extractor import Extractor
-from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest, get_text, nearest_by_query
+from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
+    get_blockset_by_anchor_axis, intersection
 from src.hocr.aganitha_hocr.object_model import BlockSet
 from src.hocr.aganitha_hocr.predicate import Predicate
 from src.hocr.aganitha_hocr.matcher import Matcher
 import re
-from dateutil import *
-from dateutil.parser import *
 import logging
 
 logger = logging.getLogger(__name__)
@@ -162,15 +161,24 @@ class BottomLeftInvoiceNumberMatcher(Matcher):
         return temp
 
 
-class ExtractTable(Matcher):
-    def match_rule(self, context: BlockSet) -> Any:
-        """
-        Return Dict
-        """
-
-
-class InvoiceDateMatcher(Matcher):
-    pass
+class BottomRightAmountMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        amount_blockset = get_text(context=context, named_params={'query': self.anchor, 'level': "word"})
+        amount_blockset = amount_blockset.get_synthetic_blockset()
+        amount_blockset_context = get_blockset_by_anchor_axis(context=context,
+                                                              named_params={'anchor': amount_blockset.blocks[0],
+                                                                            'axis': "bot"})
+        total_blockset = get_text(context=context, named_params={'query': "TOTALS", 'level': "word"})
+        total_blockset = total_blockset.get_synthetic_blockset()
+        total_blockset_context = get_blockset_by_anchor_axis(context=context,
+                                                             named_params={'anchor': total_blockset.blocks[0],
+                                                                           'axis': "top"})
+        amount_column_context = intersection(amount_blockset_context, total_blockset_context)
+        temp = []
+        for block in amount_column_context.blocks:
+            if re.search(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
 
 
 # MMS Class Extractor
@@ -223,10 +231,9 @@ class MMS(Extractor):
         status_list.append(BottomLeftInvoiceNumberChecker(anchor="Invoice Number").check(context_invoice_number))
 
         # Check Amount in table
-        context_amount_in_table = right(bot(context, named_params={'argument': 60}), named_params={'argument': 30})
+        context_amount_in_table = right(bot(context, named_params={'argument': 60}), named_params={'argument': 60})
         if BottomRightAmountChecker(anchor="Amount").check(context_amount_in_table):
-            amount_blockset = get_text(context_amount_in_table, named_params={'query': 'Amount', 'level': 'word'})
-
+            self.amount = context_amount_in_table
         status_list.append(BottomRightAmountChecker(anchor="Amount").check(context_amount_in_table))
 
         return all(status_list)
@@ -255,4 +262,9 @@ class MMS(Extractor):
             self.invoice_number)
         extracted_params["Invoice Number"] = inv_num
 
+        # Match Amount in table
+        amount_in_table = BottomRightAmountMatcher(anchor="Amount",
+                                                   pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.amount)
+        extracted_params["Amount"] = amount_in_table
         return extracted_params
