@@ -32,7 +32,7 @@ class BlockSet(object):
         self.y_top_left = y_top_left
         self.x_top_left = x_top_left
         self.blocks = blocks
-        self.word = [block.word for block in self.blocks]
+        self.word_list = [block.word for block in self.blocks]
 
     def __len__(self):
         return len(self.blocks)

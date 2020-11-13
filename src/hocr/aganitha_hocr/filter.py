@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: 1. Try to refactor get_blocks_by_region()
-# TODO: 2. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
+# TODO: 2. Create a filter -> get_blockset_by_anchor_axis(blockset,named_params={"axis":"bot","anchor":anchor_blockset})
+# TODO: 3. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
 
 def get_blocks_by_region(context: BlockSet, named_params: Dict) -> List[Block]:
     block_list = []

@@ -152,7 +152,7 @@ class TopRightCheckDateMatcher(Matcher):
 
 
 class TopRightCheckAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[Any]:
+    def match_rule(self, context: BlockSet) -> List[str]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         check_amount_blockset = nearest(context, named_params={"anchor": anchor_blockset, "axis": "right"})
 
@@ -165,7 +165,7 @@ class TopRightCheckAmountMatcher(Matcher):
 
 
 class BotTotalAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[Any]:
+    def match_rule(self, context: BlockSet) -> List[str]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         total_amount_blockset = nearest(context, named_params={"anchor": anchor_blockset, "axis": "right"})
 
@@ -178,8 +178,8 @@ class BotTotalAmountMatcher(Matcher):
 
 
 class LeftInvoiceNumberMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[Any]:
-        anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+    def match_rule(self, context: BlockSet) -> List[str]:
+        invoice_number_blockset = get_text(context, named_params={"query": "Invoice Number", "level": "phrase"})
         total_amount_blockset = nearest(context, named_params={"anchor": anchor_blockset, "axis": "right"})
 
         # Regex Validations
