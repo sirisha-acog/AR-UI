@@ -169,10 +169,13 @@ class BottomRightAmountMatcher(Matcher):
                                                               named_params={'anchor': amount_blockset.blocks[0],
                                                                             'axis': "bot"})
         total_blockset = get_text(context=context, named_params={'query': "TOTALS", 'level': "word"})
+        print([block.word for block in context.blocks])
         total_blockset = total_blockset.get_synthetic_blockset()
         total_blockset_context = get_blockset_by_anchor_axis(context=context,
                                                              named_params={'anchor': total_blockset.blocks[0],
                                                                            'axis': "top"})
+        print("amount : ", amount_blockset_context.__dict__)
+
         amount_column_context = intersection(amount_blockset_context, total_blockset_context)
         temp = []
         for block in amount_column_context.blocks:
@@ -231,7 +234,7 @@ class MMS(Extractor):
         status_list.append(BottomLeftInvoiceNumberChecker(anchor="Invoice Number").check(context_invoice_number))
 
         # Check Amount in table
-        context_amount_in_table = right(bot(context, named_params={'argument': 60}), named_params={'argument': 60})
+        context_amount_in_table = bot(context, named_params={'argument': 90})
         if BottomRightAmountChecker(anchor="Amount").check(context_amount_in_table):
             self.amount = context_amount_in_table
         status_list.append(BottomRightAmountChecker(anchor="Amount").check(context_amount_in_table))
@@ -243,25 +246,27 @@ class MMS(Extractor):
         # Match And Extract Date
         date = TopRightDateMatcher(anchor="DATE:", pattern=r'[a-zA-Z]').match_rule(self.date)
         extracted_params["DATE"] = date
+        print(date)
         # Match and Extract Check
         check_num = TopRightCheckMatcher(anchor="NUMBER:", pattern=r'[0-9]').match_rule(self.check_number)
         extracted_params["CHECK NUMBER"] = check_num
+        print(check_num)
         # Match and Extract Amount Paid
         amount = TopRightAmountMatcher(anchor="PAID:",
                                        pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.amount_paid)
         extracted_params["AMOUNT PAID"] = amount
-
+        print(amount)
         # Match Invoice Date
         inv_date = BottomLeftInvoiceDateMatcher(anchor="Date", pattern=r'(\d{2})[/.-](\d{2})[/.-](\d{2})$').match_rule(
             self.invoice_date)
         extracted_params["Invoice Date"] = inv_date
-
+        print(inv_date)
         # Match Invoice Number
-        inv_num = BottomLeftInvoiceDateMatcher(anchor="Number", pattern=r'(\d{7})[\-](\d{1})$').match_rule(
+        inv_num = BottomLeftInvoiceNumberMatcher(anchor="Number", pattern=r'([A-Z]?)([0-9]{1,9})([\-])(\d{1})$').match_rule(
             self.invoice_number)
         extracted_params["Invoice Number"] = inv_num
-
+        print(inv_num)
         # Match Amount in table
         amount_in_table = BottomRightAmountMatcher(anchor="Amount",
                                                    pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(

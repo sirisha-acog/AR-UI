@@ -4,69 +4,72 @@ from src.hocr.aganitha_hocr.object_model import BlockSet, Block
 from scipy.spatial.distance import euclidean
 import logging
 import re
+import shapely
+from shapely.geometry import box
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
 
 logger = logging.getLogger(__name__)
 
 
-# TODO: 1. Try to refactor get_blocks_by_region()
 # TODO: 3. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
 
-def get_blocks_by_region(context: BlockSet, named_params: Dict) -> List[Block]:
+def get_blocks_by_region(context: BlockSet, named_params: Dict) -> BlockSet:
     block_list = []
     for block in context.blocks:
-        if (block.x_top_left >= named_params['x_top_left']) and (block.y_top_left >= named_params['y_top_left']) and (
+        if (block.x_top_left > named_params['x_top_left']) and (block.y_top_left > named_params['y_top_left']) and (
                 block.x_bot_right <= named_params['x_bot_right']) \
                 and (block.y_bot_right <= named_params['y_bot_right']):
             block_list.append(block)
-    return block_list
+    return BlockSet(parent_doc=context.parent_doc, blocks=block_list)
 
 
 def top(context: BlockSet, named_params: Dict) -> BlockSet:
-    blocks = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
-                                                         'y_top_left': context.y_top_left,
-                                                         'x_bot_right': context.x_bot_right,
-                                                         'y_bot_right': int(
-                                                             context.y_bot_right * named_params['argument'] * 0.01)})
+    block_set = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
+                                                            'y_top_left': context.y_top_left,
+                                                            'x_bot_right': context.x_bot_right,
+                                                            'y_bot_right': int(
+                                                                context.y_bot_right * named_params['argument'] * 0.01)})
 
     return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left,
                     y_top_left=context.y_top_left, x_bot_right=context.x_bot_right,
-                    y_bot_right=int(context.y_bot_right * named_params['argument'] * 0.01), blocks=blocks)
+                    y_bot_right=int(context.y_bot_right * named_params['argument'] * 0.01), blocks=block_set.blocks)
 
 
 def bot(context: BlockSet, named_params: Dict) -> BlockSet:
     new_y_top_left = context.y_bot_right - (
             (context.y_bot_right - context.y_top_left) * named_params['argument'] * 0.01)
-    blocks = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
-                                                         'y_top_left': int(new_y_top_left),
-                                                         'x_bot_right': context.x_bot_right,
-                                                         'y_bot_right': context.y_bot_right})
+    block_set = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
+                                                            'y_top_left': int(new_y_top_left),
+                                                            'x_bot_right': context.x_bot_right,
+                                                            'y_bot_right': context.y_bot_right})
     return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left,
                     y_top_left=int(new_y_top_left), x_bot_right=context.x_bot_right,
-                    y_bot_right=context.y_bot_right, blocks=blocks)
+                    y_bot_right=context.y_bot_right, blocks=block_set.blocks)
 
 
 def right(context: BlockSet, named_params: Dict) -> BlockSet:
     new_x_top_left = context.x_bot_right - (
             (context.x_bot_right - context.x_top_left) * named_params['argument'] * 0.01)
-    blocks = get_blocks_by_region(context, named_params={'x_top_left': int(new_x_top_left),
-                                                         'y_top_left': context.y_top_left,
-                                                         'x_bot_right': context.x_bot_right,
-                                                         'y_bot_right': context.y_bot_right})
+    block_set = get_blocks_by_region(context, named_params={'x_top_left': int(new_x_top_left),
+                                                            'y_top_left': context.y_top_left,
+                                                            'x_bot_right': context.x_bot_right,
+                                                            'y_bot_right': context.y_bot_right})
     return BlockSet(parent_doc=context.parent_doc, x_top_left=int(new_x_top_left),
                     y_top_left=context.y_top_left, x_bot_right=context.x_bot_right,
-                    y_bot_right=context.y_bot_right, blocks=blocks)
+                    y_bot_right=context.y_bot_right, blocks=block_set.blocks)
 
 
 def left(context: BlockSet, named_params: Dict) -> BlockSet:
-    blocks = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
-                                                         'y_top_left': context.y_top_left,
-                                                         'x_bot_right': int(
-                                                             context.x_bot_right * named_params['argument'] * 0.01),
-                                                         'y_bot_right': context.y_bot_right})
+    block_set = get_blocks_by_region(context, named_params={'x_top_left': context.x_top_left,
+                                                            'y_top_left': context.y_top_left,
+                                                            'x_bot_right': int(
+                                                                context.x_bot_right * named_params['argument'] * 0.01),
+                                                            'y_bot_right': context.y_bot_right})
     return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left,
                     y_top_left=context.y_top_left,
                     x_bot_right=int(context.x_bot_right * named_params['argument'] * 0.01),
-                    y_bot_right=context.y_bot_right, blocks=blocks)
+                    y_bot_right=context.y_bot_right, blocks=block_set.blocks)
 
 
 def nearest(context: BlockSet, named_params: Dict) -> BlockSet:
@@ -293,7 +296,10 @@ def get_text(context: BlockSet, named_params: Dict) -> BlockSet:
                                                                'axis': "bot"})
             logger.debug("Next Right: %r", next_right.blocks[0].word)
             logger.debug("Next Bot: %r", next_bot.blocks[0].word)
-            block_set.append(next_right.blocks[0])
+            if next_right.blocks[0].word == query_list[i + 1].blocks[0].word:
+                block_set.append(next_right.blocks[0])
+            if next_bot.blocks[0].word == query_list[i + 1].blocks[0].word:
+                block_set.append(next_bot.blocks[0])
 
         return BlockSet(parent_doc=context.parent_doc, blocks=block_set)
 
@@ -321,6 +327,8 @@ def intersection(context1: BlockSet, context2: BlockSet) -> BlockSet:
             return BlockSet with relevant blocks
 
     """
+    # context1_polygon = box(context1.x_top_left, context1.y_top_left, context1.x_bot_right, context1.y_bot_right)
+    # context2_polygon = box(context2.x_top_left, context2.y_top_left, context2.x_bot_right, context2.y_bot_right)
     # If one rectangle is on left side of other
     if context1.x_top_left >= context2.x_bot_right or context2.x_top_left >= context1.x_bot_right:
         logger.debug("DOES NOT INTERSECT")
@@ -334,14 +342,14 @@ def intersection(context1: BlockSet, context2: BlockSet) -> BlockSet:
         new_y_top_left = max(context1.y_top_left, context2.y_top_left)
         new_x_bot_right = min(context1.x_bot_right, context2.x_bot_right)
         new_y_bot_right = min(context1.y_bot_right, context2.y_bot_right)
-        blocks = get_blocks_by_region(context=context1,
-                                      named_params={'x_top_left': new_x_top_left,
-                                                    'y_top_left': new_y_top_left,
-                                                    'x_bot_right': new_x_bot_right,
-                                                    'y_bot_right': new_y_bot_right})
+        block_set = get_blocks_by_region(context=context1,
+                                         named_params={'x_top_left': new_x_top_left,
+                                                       'y_top_left': new_y_top_left,
+                                                       'x_bot_right': new_x_bot_right,
+                                                       'y_bot_right': new_y_bot_right})
         return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left,
                         x_bot_right=new_x_bot_right,
-                        y_bot_right=new_y_bot_right, blocks=blocks)
+                        y_bot_right=new_y_bot_right, blocks=block_set.blocks)
 
 
 def get_blockset_by_anchor_axis(context: BlockSet, named_params: Dict) -> BlockSet:
@@ -350,41 +358,41 @@ def get_blockset_by_anchor_axis(context: BlockSet, named_params: Dict) -> BlockS
     """
     if named_params['axis'].lower() == "right":
         right_coord_of_anchor = named_params['anchor'].x_bot_right
-        blocks = get_blocks_by_region(context, named_params={'x_top_left': right_coord_of_anchor,
-                                                             'y_top_left': context.y_top_left,
-                                                             'x_bot_right': context.x_bot_right,
-                                                             'y_bot_right': context.y_bot_right})
+        block_set = get_blocks_by_region(context, named_params={'x_top_left': right_coord_of_anchor,
+                                                                'y_top_left': context.y_top_left,
+                                                                'x_bot_right': context.x_bot_right,
+                                                                'y_bot_right': context.y_bot_right})
         return BlockSet(parent_doc=context.parent_doc, x_top_left=right_coord_of_anchor, y_top_left=context.y_top_left,
-                        x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right, blocks=blocks)
+                        x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right, blocks=block_set.blocks)
 
     elif named_params['axis'].lower() == "left":
         left_coord_of_anchor = named_params['anchor'].x_top_left
-        blocks = get_blocks_by_region(context,
-                                      named_params={'x_top_left': context.x_top_left,
-                                                    'y_top_left': context.y_top_left,
-                                                    'x_bot_right': left_coord_of_anchor,
-                                                    'y_bot_right': context.y_bot_right})
+        block_set = get_blocks_by_region(context,
+                                         named_params={'x_top_left': context.x_top_left,
+                                                       'y_top_left': context.y_top_left,
+                                                       'x_bot_right': left_coord_of_anchor,
+                                                       'y_bot_right': context.y_bot_right})
 
         return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
-                        x_bot_right=left_coord_of_anchor, y_bot_right=context.y_bot_right, blocks=blocks)
+                        x_bot_right=left_coord_of_anchor, y_bot_right=context.y_bot_right, blocks=block_set.blocks)
 
     elif named_params['axis'].lower() == "top":
         top_coord_of_anchor = named_params['anchor'].y_top_left
-        blocks = get_blocks_by_region(context,
-                                      named_params={'x_top_left': context.x_top_left,
-                                                    'y_top_left': context.y_top_left,
-                                                    'x_bot_right': context.x_bot_right,
-                                                    'y_bot_right': top_coord_of_anchor})
+        block_set = get_blocks_by_region(context,
+                                         named_params={'x_top_left': context.x_top_left,
+                                                       'y_top_left': context.y_top_left,
+                                                       'x_bot_right': context.x_bot_right,
+                                                       'y_bot_right': top_coord_of_anchor})
         return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left, y_top_left=context.y_top_left,
-                        x_bot_right=context.x_bot_right, y_bot_right=top_coord_of_anchor, blocks=blocks)
+                        x_bot_right=context.x_bot_right, y_bot_right=top_coord_of_anchor, blocks=block_set.blocks)
 
     elif named_params['axis'].lower() == "bot":
         bot_coord_of_anchor = named_params['anchor'].y_bot_right
-        blocks = get_blocks_by_region(context,
-                                      named_params={'x_top_left': context.x_top_left,
-                                                    'y_top_left': bot_coord_of_anchor,
-                                                    'x_bot_right': context.x_bot_right,
-                                                    'y_bot_right': context.y_bot_right})
+        block_set = get_blocks_by_region(context,
+                                         named_params={'x_top_left': context.x_top_left,
+                                                       'y_top_left': bot_coord_of_anchor,
+                                                       'x_bot_right': context.x_bot_right,
+                                                       'y_bot_right': context.y_bot_right})
 
         return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left, y_top_left=bot_coord_of_anchor,
-                        x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right, blocks=blocks)
+                        x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right, blocks=block_set.blocks)

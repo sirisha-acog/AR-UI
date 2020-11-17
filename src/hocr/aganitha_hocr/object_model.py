@@ -46,8 +46,7 @@ class BlockSet(object):
         """
         block_list = []
         for block in self.blocks:
-
-            if fuzz.ratio(query, block.word) == 100:
+            if fuzz.ratio(query, block.word) > 80:
                 logger.info('Perfect Match!')
                 logger.info('Query: %r', query)
                 logger.info(' Block Word: %r', block.word)
