@@ -298,7 +298,7 @@ def get_text(context: BlockSet, named_params: Dict) -> BlockSet:
             logger.debug("Next Bot: %r", next_bot.blocks[0].word)
             if next_right.blocks[0].word == query_list[i + 1].blocks[0].word:
                 block_set.append(next_right.blocks[0])
-            if next_bot.blocks[0].word == query_list[i + 1].blocks[0].word:
+            if next_bot.blocks[0].word == query_list[i + 1].blocks[0].word and next_right.blocks[0].word != query_list[i + 1].blocks[0].word:
                 block_set.append(next_bot.blocks[0])
 
         return BlockSet(parent_doc=context.parent_doc, blocks=block_set)
