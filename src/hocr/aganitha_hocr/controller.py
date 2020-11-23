@@ -5,6 +5,8 @@ from src.hocr.aganitha_hocr.template_repo.OMG_USA_Media import OMG
 import logging
 import json
 import os
+import csv
+import pandas as pd
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
@@ -12,16 +14,4 @@ if __name__ == "__main__":
     template = OMG()
     extracted_values = template.execute(page.page_blockset)
     print(extracted_values)
-    # path = '/home/adarsh/work/ar-automation/data/MMS-remmitance-hocr'
-    # for file in os.listdir(path):
-    #     if file.endswith(".html"):
-    #         print("For File --------> ", os.path.join(path, file))
-    #         page = Page('/home/adarsh/work/ar-automation/data/MMS-remmitance-hocr/07.07.20-lb83293-1-4-addl-doc-01.jpg.hocr.hocrjs.html')
-    #         page = Page('/Users/abhishek/Documents/CoxMedia-Crestfin/GroupM-SRA-1.hocr')
-    #         template = MMS()
-    #         extracted_values = template.execute(page.page_blockset)
-    #         t = [block.word for block in page.page_blockset.blocks]
-    #         if "TOTALS" in t:
-    #             print("present")
-    #         with open('/home/adarsh/work/ar-automation/data/output_json/mms3.json', 'w') as json_file:
-    #              json.dump(extracted_values, json_file, indent=4)
+    extracted_values.to_csv('/home/adarsh/work/ar-automation/output/csv/OMG1.csv', index=False)
