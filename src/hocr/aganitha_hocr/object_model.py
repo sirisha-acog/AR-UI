@@ -54,6 +54,7 @@ class BlockSet(object):
                             block.x_bot_right,
                             block.y_bot_right)
                 block_list.append(block)
+                break
         return BlockSet(parent_doc=self.parent_doc, blocks=block_list)
 
     def get_synthetic_blockset(self) -> BlockSet_t:

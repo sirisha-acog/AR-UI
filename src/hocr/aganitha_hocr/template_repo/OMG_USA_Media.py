@@ -37,8 +37,6 @@ class TopRightDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={'query': self.anchor,
                                                     'level': "word"})
-        for block in block_set:
-            print("Blocks", block.word)
         block = block_set.get_synthetic_block()
         if len(block.word.split()) == 1:
             return True
