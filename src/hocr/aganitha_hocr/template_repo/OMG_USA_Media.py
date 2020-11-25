@@ -127,7 +127,7 @@ class BottomRightNetAmountChecker(Predicate):
 # MATCHERS -->
 
 class TopRightDateMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> Any:
+    def match_rule(self, context: BlockSet) -> List[str]:
         logger.debug("In TopRightDateMatcher")
         block_set = get_text(context, named_params={'query': self.anchor, 'level': "word"})
         if len(block_set.blocks) == 1:
@@ -328,10 +328,7 @@ class OMG(Extractor):
             self.net_amount = context_net_amount
         status_list.append(BottomRightNetAmountChecker(anchor='Net Amount').check(context_net_amount))
 
-        if all(status_list):
-            return True
-        else:
-            return False
+        return all(status_list)
 
     def extract(self, context: BlockSet) -> Any:
         extracted_params = {}

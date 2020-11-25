@@ -147,7 +147,154 @@ class TopRightNetLessDiscountChecker(Predicate):
             return False
 
 
+class BotCheckTotalChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, named_params={'query': self.anchor,
+                                                    'level': "phrase"})
+        block = block_set.get_synthetic_block()
+        if len(block.word.split()) == 2:
+            return True
+        else:
+            return False
+
+
 # MATCHERS -->
+class TopRightDateMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        block_set = get_text(context, named_params={'query': self.anchor, 'level': "word"})
+        if len(block_set.blocks) == 1:
+            date = nearest_by_query(context, named_params={'anchor': block_set.blocks[0], 'pattern': self.pattern,
+                                                           'axis': "right"})
+            return [date.blocks[0].word]
+
+
+class TopRightCheckMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        block_set = get_text(context, named_params={'query': self.anchor, 'level': "word"})
+        if len(block_set.blocks) == 1:
+            check = nearest_by_query(context, named_params={'anchor': block_set.blocks[0], 'pattern': self.pattern,
+                                                            'axis': "right"})
+            return [check.blocks[0].word]
+
+
+class TopLeftInvoiceDateMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        inv_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        below_inv_blockset = get_blockset_by_anchor_axis(context,
+                                                         named_params={"anchor": inv_blockset.get_synthetic_block(),
+                                                                       "axis": 'bot'})
+        temp = []
+        for block in below_inv_blockset:
+            if re.match(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
+
+
+class TopLeftInvoiceNumberMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        inv_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        below_inv_blockset = get_blockset_by_anchor_axis(context,
+                                                         named_params={"anchor": inv_blockset.get_synthetic_block(),
+                                                                       "axis": 'bot'})
+        temp = []
+        for block in below_inv_blockset:
+            if re.match(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
+
+
+class TopRightGrossAmountMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        gross_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        below_gross_blockset = get_blockset_by_anchor_axis(context,
+                                                           named_params={"anchor": gross_blockset.get_synthetic_block(),
+                                                                         'axis': 'bot'})
+        discount_blockset = get_text(context, named_params={'query': 'Discount', "level": "word"})
+        left_discount_blockset = get_blockset_by_anchor_axis(context, named_params={
+            "anchor": discount_blockset.get_synthetic_block(), 'axis': 'left'})
+
+        new_blockset = intersection(below_gross_blockset, left_discount_blockset)
+
+        temp = []
+        for block in new_blockset:
+            if re.match(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
+
+
+class TopRightDiscountMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        discount_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
+        below_discount_blockset = get_blockset_by_anchor_axis(context, named_params={
+            "anchor": discount_blockset.get_synthetic_block(), 'axis': 'bot'})
+        gross_blockset = get_text(context, named_params={"query": 'Gross', "level": "word"})
+        right_gross_blockset = get_blockset_by_anchor_axis(context,
+                                                           named_params={"anchor": gross_blockset.get_synthetic_block(),
+                                                                         'axis': 'right'})
+        net_blockset = get_text(context, named_params={"query": 'Net', "level": "word"})
+        left_net_blockset = get_blockset_by_anchor_axis(context,
+                                                        named_params={"anchor": net_blockset.get_synthetic_block(),
+                                                                      'axis': 'left'})
+
+        new_blockset = intersection(below_discount_blockset, right_gross_blockset)
+        new_blockset = intersection(new_blockset, left_net_blockset)
+        temp = []
+        for block in new_blockset:
+            if re.match(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
+
+
+class TopRightNetMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        net_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        below_net_blockset = get_blockset_by_anchor_axis(context,
+                                                         named_params={"anchor": net_blockset.get_synthetic_block(),
+                                                                       'axis': 'bot'})
+        discount_blockset = get_text(context, named_params={'query': 'Discount', "level": "word"})
+        right_discount_blockset = get_blockset_by_anchor_axis(context, named_params={
+            "anchor": discount_blockset.get_synthetic_block(), 'axis': 'right'})
+
+        less_blockset = get_text(context, named_params={'query': 'Less', "level": "word"})
+        left_less_blockset = get_blockset_by_anchor_axis(context, named_params={
+            "anchor": less_blockset.get_synthetic_block(), 'axis': 'left'})
+
+        new_blockset = intersection(below_net_blockset, right_discount_blockset)
+        new_blockset = intersection(new_blockset, left_less_blockset)
+        temp = []
+        for block in new_blockset:
+            if re.match(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
+
+
+class TopRightNetLessDiscMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        less_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
+        below_less_blockset = get_blockset_by_anchor_axis(context, named_params={
+            "anchor": less_blockset.get_synthetic_block(), 'axis': 'bot'})
+
+        net_blockset = get_text(context, named_params={"query": "Net", "level": "word"})
+        right_net_blockset = get_blockset_by_anchor_axis(context,
+                                                         named_params={"anchor": net_blockset.get_synthetic_block(),
+                                                                       'axis': 'right'})
+        new_blockset = intersection(below_less_blockset, right_net_blockset)
+        temp = []
+        for block in new_blockset:
+            if re.match(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
+
+
+class BotCheckTotalMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        total_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
+        gross_amount = nearest(context, named_params={'anchor': total_blockset.get_synthetic_block(), 'axis': 'right'})
+        discount_amount = nearest(context, named_params={'anchor': gross_amount.get_synthetic_block(), 'axis': 'right'})
+        net_amount = nearest(context, named_params={'anchor': discount_amount.get_synthetic_block(), 'axis': 'right'})
+        net_less_discount = nearest(context, named_params={'anchor': net_amount.get_synthetic_block(), 'axis': 'right'})
+        return [gross_amount.blocks[0].word, discount_amount.blocks[0].word, net_amount.blocks[0].word,
+                net_less_discount.blocks[0].word]
 
 
 # 22Squared Extractor
@@ -166,6 +313,7 @@ class Squared(Extractor):
         self.discount: BlockSet = None
         self.net: BlockSet = None
         self.net_Less_discount: BlockSet = None
+        self.check_total: BlockSet = None
 
     def match(self, context: BlockSet) -> bool:
         status_list = []
@@ -218,6 +366,12 @@ class Squared(Extractor):
             self.gross = context_gross
         status_list.append(TopRightGrossChecker(anchor='Gross').check(context_gross))
 
+        # Discount
+        context_discount = right(top(context, named_params={'argument': 70}), named_params={'argument': 50})
+        if TopRightDiscountChecker(anchor='Discount').check(context_discount):
+            self.discount = context_discount
+        status_list.append(TopRightDiscountChecker(anchor='Discount').check(context_discount))
+
         # Net Amount
         context_net = right(top(context, named_params={'argument': 70}), named_params={'argument': 50})
         if TopRightNetChecker(anchor='Net').check(context_net):
@@ -230,9 +384,69 @@ class Squared(Extractor):
             self.net_Less_discount = context_net_less
         status_list.append(TopRightNetLessDiscountChecker(anchor='Net Less Disc').check(context_net_less))
 
-        print(status_list)
-        return True
+        # Check Total
+        context_check_total = bot(context, named_params={'argument': 30})
+        if BotCheckTotalChecker(anchor='Check Total:').check(context_check_total):
+            self.check_total = context_check_total
+        status_list.append(BotCheckTotalChecker(anchor='Check Total:').check(context_check_total))
+
+        return all(status_list)
 
     def extract(self, context: BlockSet) -> Dict[str, Any]:
         extracted_params = {}
+        # Date
+        date = TopRightDateMatcher(anchor='Date', pattern=r'\d{2}\/\d{2}\/\d{4}').match_rule(self.date)
+        extracted_params["Date"] = date
+
+        # Check Number
+        check = TopRightCheckMatcher(anchor='Check', pattern=r'\d{9}').match_rule(self.check_number)
+        extracted_params["Check Number"] = check
+        print(check)
+
+        # Invoice Date
+        inv_date = TopLeftInvoiceDateMatcher(anchor='Inv', pattern=r'\d{2}\/\d{2}\/\d{2}').match_rule(self.inv_date)
+        extracted_params["Invoice Date"] = inv_date
+
+        # Invoice Number
+        inv_num = TopLeftInvoiceNumberMatcher(anchor='Inv.', pattern=r'([0-9]{1,9})([\-])(\d{1})$').match_rule(
+            self.inv_num)
+        extracted_params["Invoice Number"] = inv_num
+
+        # Gross Amount
+        gross_amount = TopRightGrossAmountMatcher(anchor='Gross',
+                                                  pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.gross)
+        extracted_params["Gross Amount"] = gross_amount
+
+        # Discount
+        discount = TopRightDiscountMatcher(anchor='Discount',
+                                           pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.discount)
+        extracted_params["Discount"] = discount
+
+        # Net
+        net = TopRightNetMatcher(anchor='Net',
+                                 pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.net)
+        extracted_params["Net"] = net
+
+        # Net Less Discount
+        net_less_disc = TopRightNetLessDiscMatcher(anchor='Less',
+                                                   pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.net_Less_discount)
+        extracted_params["Net Less Discount"] = net_less_disc
+
+        # Check Totals
+        check_total = BotCheckTotalMatcher(anchor="Total:",
+                                           pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.check_total)
+        extracted_params["Gross Total"] = [check_total[0]]
+        extracted_params["Discount Total"] = [check_total[1]]
+        extracted_params["Net Total"] = [check_total[2]]
+        extracted_params["Net Less Discount Total"] = [check_total[3]]
+
+        # Dump into JSON
+        with open('/home/adarsh/work/ar-automation/output/json/22Squared.json', 'w') as json_file:
+            logger.debug("Dumping into JSON")
+            json.dump(extracted_params, json_file, indent=4)
         return extracted_params
