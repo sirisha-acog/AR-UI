@@ -97,7 +97,7 @@ class Block(object):
         self.y_top_left = y_top_left
         self.x_bot_right = x_bot_right
         self.y_bot_right = y_bot_right
-        self.word = word
+        self.word = word.strip()
         self.x_centre = int(self.x_top_left + (self.x_bot_right - self.x_top_left) / 2)
         self.y_centre = int(self.y_top_left + (self.y_bot_right - self.y_top_left) / 2)
         self.centre = [self.x_centre, self.y_centre]

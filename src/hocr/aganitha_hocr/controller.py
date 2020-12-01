@@ -13,7 +13,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    page = Page('/home/adarsh/work/ar-automation/tmp/09.24.20-lb83199-1-11-addl-doc-01.jpg.hocr.hocrjs.html')
+    page = Page('/Users/adarsh/work/ar-automation/tmp/09.24.20-lb83198-1-17-addl-doc-01.jpg.hocr.hocrjs.html')
     template = Katz()
     extracted_values = template.execute(page.page_blockset)
     print(extracted_values)
