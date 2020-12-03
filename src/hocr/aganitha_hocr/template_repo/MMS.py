@@ -5,7 +5,7 @@ from typing import Any, List, Dict
 
 from src.hocr.aganitha_hocr.extractor import Extractor
 from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
-    get_blockset_by_anchor_axis, intersection
+    get_blockset_by_anchor_axis, intersection, nearest_by_query
 from src.hocr.aganitha_hocr.object_model import BlockSet
 from src.hocr.aganitha_hocr.predicate import Predicate
 from src.hocr.aganitha_hocr.matcher import Matcher
@@ -103,10 +103,13 @@ class TopRightDateMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> Any:
         logger.debug("In TopRightDateMatcher")
         block_set = get_text(context, named_params={'query': self.anchor, 'level': "word"})
+
         if len(block_set.blocks) == 1:
-            month = nearest(context, named_params={'anchor': block_set.blocks[0], 'axis': "right"})
+            colon = nearest(context, named_params={'anchor': block_set.blocks[0], 'axis': "right"})
+            month = nearest(context, named_params={'anchor': colon.blocks[0], 'axis': "right"})
             day = nearest(context, named_params={'anchor': month.blocks[0], 'axis': "right"})
-            year = nearest(context, named_params={'anchor': day.blocks[0], 'axis': "right"})
+            year = nearest_by_query(context,
+                                    named_params={'anchor': colon.blocks[0], 'pattern': r'^(\d{4}$)', 'axis': 'right'})
             logger.debug("%r", month.blocks[0].word)
             logger.debug("%r", day.blocks[0].word)
             logger.debug("%r", year.blocks[0].word)
@@ -123,7 +126,8 @@ class TopRightCheckMatcher(Matcher):
         logger.debug("In TopRightCheckMatcher")
         block_set = get_text(context, named_params={'query': self.anchor, 'level': "word"})
         if len(block_set.blocks) == 1:
-            check_num = nearest(context, named_params={'anchor': block_set.blocks[0], 'axis': "right"})
+            check_num = nearest_by_query(context, named_params={'anchor': block_set.blocks[0], 'pattern': self.pattern,
+                                                                'axis': "right"})
             logger.debug("%r", check_num.blocks[0].word)
             # Regex Validations
             if not re.match(self.pattern, check_num.blocks[0].word):
@@ -136,10 +140,11 @@ class TopRightAmountMatcher(Matcher):
         logger.debug("In TopRightAmountMatcher")
         block_set = get_text(context, named_params={'query': self.anchor, 'level': "word"})
         if len(block_set.blocks) == 1:
-            amount = nearest(context, named_params={'anchor': block_set.blocks[0], 'axis': "right"})
+            amount = nearest(context, named_params={'anchor': block_set.blocks[0], 'pattern': self.pattern,
+                                                    'axis': "right"})
             logger.debug("Amount: %r", amount.blocks[0].word)
-            if re.match(self.pattern, amount.blocks[0].word):
-                return amount.blocks[0].word
+            if re.match(self.pattern, amount.blocks[0].word.replace(" ", "")):
+                return amount.blocks[0].word.replace(" ", "")
 
 
 class BottomLeftInvoiceDateMatcher(Matcher):
@@ -169,18 +174,15 @@ class BottomRightAmountMatcher(Matcher):
                                                               named_params={'anchor': amount_blockset.blocks[0],
                                                                             'axis': "bot"})
         total_blockset = get_text(context=context, named_params={'query': "TOTALS", 'level': "word"})
-        print([block.word for block in context.blocks])
         total_blockset = total_blockset.get_synthetic_blockset()
         total_blockset_context = get_blockset_by_anchor_axis(context=context,
                                                              named_params={'anchor': total_blockset.blocks[0],
                                                                            'axis': "top"})
-        print("amount : ", amount_blockset_context.__dict__)
-
         amount_column_context = intersection(amount_blockset_context, total_blockset_context)
         temp = []
         for block in amount_column_context.blocks:
-            if re.search(self.pattern, block.word):
-                temp.append(block.word)
+            if re.search(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -216,10 +218,12 @@ class MMS(Extractor):
         logger.debug("Status List: %r", status_list)
 
         # Check Amount Paid
-        context_amount_paid = right(top(context, named_params={'argument': 30}), named_params={'argument': 60})
-        if TopRightAmountChecker(anchor="AMOUNT PAID:").check(context_amount_paid):
+        context_amount_paid = right(top(context, named_params={'argument': 20}), named_params={'argument': 60})
+        for block in context_amount_paid:
+            print(block.word)
+        if TopRightAmountChecker(anchor="AMOUNT PAID").check(context_amount_paid):
             self.amount_paid = context_amount_paid
-        status_list.append(TopRightAmountChecker(anchor="AMOUNT PAID:").check(context_amount_paid))
+        status_list.append(TopRightAmountChecker(anchor="AMOUNT PAID").check(context_amount_paid))
 
         # Check Invoice date in table
         context_invoice_date = left(bot(context, named_params={'argument': 60}), named_params={'argument': 60})
@@ -234,7 +238,7 @@ class MMS(Extractor):
         status_list.append(BottomLeftInvoiceNumberChecker(anchor="Invoice Number").check(context_invoice_number))
 
         # Check Amount in table
-        context_amount_in_table = bot(context, named_params={'argument': 90})
+        context_amount_in_table = bot(context, named_params={'argument': 80})
         if BottomRightAmountChecker(anchor="Amount").check(context_amount_in_table):
             self.amount = context_amount_in_table
         status_list.append(BottomRightAmountChecker(anchor="Amount").check(context_amount_in_table))
@@ -244,15 +248,15 @@ class MMS(Extractor):
     def extract(self, context: BlockSet) -> Dict:
         extracted_params = {}
         # Match And Extract Date
-        date = TopRightDateMatcher(anchor="DATE:", pattern=r'[a-zA-Z]').match_rule(self.date)
+        date = TopRightDateMatcher(anchor="DATE", pattern=r'[a-zA-Z]').match_rule(self.date)
         extracted_params["DATE"] = date
         print(date)
         # Match and Extract Check
-        check_num = TopRightCheckMatcher(anchor="NUMBER:", pattern=r'[0-9]').match_rule(self.check_number)
+        check_num = TopRightCheckMatcher(anchor="NUMBER", pattern=r'^\d{10}$').match_rule(self.check_number)
         extracted_params["CHECK NUMBER"] = check_num
         print(check_num)
         # Match and Extract Amount Paid
-        amount = TopRightAmountMatcher(anchor="PAID:",
+        amount = TopRightAmountMatcher(anchor="$",
                                        pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.amount_paid)
         extracted_params["AMOUNT PAID"] = amount
@@ -263,13 +267,14 @@ class MMS(Extractor):
         extracted_params["Invoice Date"] = inv_date
         print(inv_date)
         # Match Invoice Number
-        inv_num = BottomLeftInvoiceNumberMatcher(anchor="Number", pattern=r'([A-Z]?)([0-9]{1,9})([\-])(\d{1})$').match_rule(
+        inv_num = BottomLeftInvoiceNumberMatcher(anchor="Number",
+                                                 pattern=r'([A-Z]?)([0-9]{1,9})([\-])(\d{1})$').match_rule(
             self.invoice_number)
         extracted_params["Invoice Number"] = inv_num
         print(inv_num)
         # Match Amount in table
         amount_in_table = BottomRightAmountMatcher(anchor="Amount",
-                                                   pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                                   pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.amount)
         extracted_params["Amount"] = amount_in_table
         return extracted_params

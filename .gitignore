@@ -1,6 +1,9 @@
 .idea/
 data/
 tmp/
+new_data/
+output/
+test/
 
 
 # Packages #
