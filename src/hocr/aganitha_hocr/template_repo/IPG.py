@@ -130,9 +130,11 @@ class TopRightCheckMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
         block_set = get_text(context, named_params={'query': self.anchor, 'level': "word"})
         if len(block_set.blocks) == 1:
-            check = nearest_by_query(context, named_params={'anchor': block_set.blocks[0], 'pattern': self.pattern,
-                                                            'axis': "right"})
-            return [check.blocks[0].word]
+            # check = nearest_by_query(context, named_params={'anchor': block_set.blocks[0], 'pattern': self.pattern,
+            #                                                 'axis': "right"})
+            for block in context:
+                if re.match(self.pattern, block.word):
+                    return [block.word]
 
 
 class TopRightInvoiceDateMatcher(Matcher):
@@ -157,7 +159,11 @@ class TopRightInvoicePeriodMatcher(Matcher):
         temp = []
         for block in below_inv_period_blockset:
             if re.match(self.pattern, block.word):
-                temp.append(block.word)
+                year = nearest_by_query(below_inv_period_blockset, named_params={'anchor': block, 'pattern': '^\d{4}$',
+                                                                                 'axis': 'right'})
+                date = block.word + " " + year.blocks[0].word
+                temp.append(date)
+
         return temp
 
 
@@ -179,10 +185,30 @@ class BottomRightCheckTotalMatcher(Matcher):
         check_total_blockset = get_text(context, named_params={'query': self.anchor, 'level': "phrase"})
         check_block = check_total_blockset.get_synthetic_block()
         check_blockset = get_blockset_by_anchor_axis(context, named_params={'anchor': check_block, 'axis': 'right'})
-        amount = nearest_by_query(check_blockset, named_params={'anchor': check_block, 'axis': 'right', 'pattern': self.pattern})
-        return [amount.blocks[0].word]
+        amount = nearest_by_query(check_blockset,
+                                  named_params={'anchor': check_block, 'axis': 'right', 'pattern': self.pattern})
+        return [amount.blocks[0].word.replace(" ","")]
 
 
+class TopRightAmountMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        amount_blockset = get_text(context, named_params={'query': self.anchor, 'level': 'word'})
+        below_amount_blockset = get_blockset_by_anchor_axis(context, named_params={'anchor': amount_blockset.get_synthetic_block(),
+                                                                                   'axis': 'bot'})
+        advertiser_blockset = get_text(context, named_params={'query': 'Advertiser', 'level': 'word'})
+        above_advertiser_block = get_blockset_by_anchor_axis(context, named_params={'anchor': advertiser_blockset.get_synthetic_block(),
+                                                                                   'axis': 'top'})
+
+        number_blockset = get_text(context, named_params={'query': 'NUMBER', 'level': 'word'})
+        right_number_blockset = get_blockset_by_anchor_axis(context, named_params={'anchor': number_blockset.get_synthetic_block(),
+                                                                                   'axis': 'right'})
+        new_blockset = intersection(below_amount_blockset, above_advertiser_block)
+        new_blockset = intersection(new_blockset, right_number_blockset)
+        temp = []
+        for block in new_blockset:
+            if re.match(self.pattern, block.word.replace(" ","")):
+                temp.append(block.word.replace(" ",""))
+        return temp
 # IPG Class Extractor
 
 class IPG(Extractor):
@@ -209,9 +235,9 @@ class IPG(Extractor):
 
         # Date
         context_date = right(top(context, named_params={'argument': 30}), named_params={'argument': 60})
-        if TopRightDateChecker(anchor='Date:').check(context_date):
+        if TopRightDateChecker(anchor='Date').check(context_date):
             self.date = context_date
-        status_list.append(TopRightDateChecker(anchor='Date:').check(context_date))
+        status_list.append(TopRightDateChecker(anchor='Date').check(context_date))
 
         # Check Number
         context_check_number = right(top(context, named_params={'argument': 30}), named_params={'argument': 40})
@@ -238,22 +264,22 @@ class IPG(Extractor):
         status_list.append(TopRightInvoiceNumberChecker(anchor='INVOICE NUMBER').check(context_invoice_num))
 
         # Amount
-        context_amount = right(top(context, named_params={'argument': 70}), named_params={'argument': 30})
+        context_amount = right(top(context, named_params={'argument': 70}), named_params={'argument': 60})
         if TopRightAmountChecker(anchor='AMOUNT').check(context_amount):
             self.amount = context_amount
         status_list.append(TopRightAmountChecker(anchor='AMOUNT').check(context_amount))
 
         # Advertiser Total
-        context_adv = bot(right(context, named_params={'argument': 50}), named_params={'argument': 60})
-        if BottomRightAdvTotalChecker(anchor='Advertiser Total:').check(context_adv):
+        context_adv = bot(right(context, named_params={'argument': 50}), named_params={'argument': 80})
+        if BottomRightAdvTotalChecker(anchor='Advertiser Total').check(context_adv):
             self.adv_total = context_adv
-        status_list.append(BottomRightAdvTotalChecker(anchor='Advertiser Total:').check(context_adv))
+        status_list.append(BottomRightAdvTotalChecker(anchor='Advertiser Total').check(context_adv))
 
         # Check Total
-        context_check_total = bot(right(context, named_params={'argument': 50}), named_params={'argument': 60})
-        if BottomRightCheckTotalChecker(anchor='Check Total:').check(context_check_total):
+        context_check_total = bot(right(context, named_params={'argument': 50}), named_params={'argument': 80})
+        if BottomRightCheckTotalChecker(anchor='Check Total').check(context_check_total):
             self.check_total = context_check_total
-        status_list.append(BottomRightCheckTotalChecker(anchor='Check Total:').check(context_check_total))
+        status_list.append(BottomRightCheckTotalChecker(anchor='Check Total').check(context_check_total))
         print(status_list)
         return True
 
@@ -265,7 +291,7 @@ class IPG(Extractor):
         extracted_params["Date"] = date
 
         # Check Number
-        check = TopRightCheckMatcher(anchor='No.', pattern=r'\d{9}').match_rule(self.check_number)
+        check = TopRightCheckMatcher(anchor='No.', pattern=r'^\d{6,9}$').match_rule(self.check_number)
         extracted_params["Check Number"] = check
 
         # Invoice Date
@@ -274,19 +300,24 @@ class IPG(Extractor):
         extracted_params["Invoice Date"] = inv_date
 
         # Invoice Period
-        inv_period = TopRightInvoicePeriodMatcher(anchor='PERIOD', pattern=r'^\D{3}\/\d{4}').match_rule(
+        inv_period = TopRightInvoicePeriodMatcher(anchor='PERIOD',
+                                                  pattern=r'^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$').match_rule(
             self.invoice_period)
         extracted_params["Invoice Period"] = inv_period
 
         # Invoice Number
-        inv_num = TopRightInvoiceNumberMatcher(anchor='NUMBER', pattern=r'([0-9]{6})([\-])(\d{1})$').match_rule(
+        inv_num = TopRightInvoiceNumberMatcher(anchor='NUMBER', pattern=r'(^([0-9]{6})([\-])(\d{1})$)|(^\w{5}?)').match_rule(
             self.invoice_number)
         extracted_params["Invoice Number"] = inv_num
 
-        # Check Total
-        check_total = BottomRightCheckTotalMatcher(anchor='Check Total:', pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9])?$').match_rule(self.check_total)
-        extracted_params['Check Total'] = check_total
+        # Amount
+        amount = TopRightAmountMatcher(anchor='AMOUNT', pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])$').match_rule(self.amount)
+        extracted_params["Net Amount"] = amount
 
         # Check Total
+        check_total = BottomRightCheckTotalMatcher(anchor='Check Total',
+                                                   pattern=r'^([0-9]{1,3}\s([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])$').match_rule(
+            self.check_total)
+        extracted_params['Check Total'] = check_total
 
         return extracted_params

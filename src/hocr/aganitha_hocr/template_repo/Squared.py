@@ -217,8 +217,8 @@ class TopRightGrossAmountMatcher(Matcher):
 
         temp = []
         for block in new_blockset:
-            if re.match(self.pattern, block.word):
-                temp.append(block.word)
+            if re.match(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -240,8 +240,8 @@ class TopRightDiscountMatcher(Matcher):
         new_blockset = intersection(new_blockset, left_net_blockset)
         temp = []
         for block in new_blockset:
-            if re.match(self.pattern, block.word):
-                temp.append(block.word)
+            if re.match(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -263,8 +263,8 @@ class TopRightNetMatcher(Matcher):
         new_blockset = intersection(new_blockset, left_less_blockset)
         temp = []
         for block in new_blockset:
-            if re.match(self.pattern, block.word):
-                temp.append(block.word)
+            if re.match(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -281,20 +281,21 @@ class TopRightNetLessDiscMatcher(Matcher):
         new_blockset = intersection(below_less_blockset, right_net_blockset)
         temp = []
         for block in new_blockset:
-            if re.match(self.pattern, block.word):
-                temp.append(block.word)
+            if re.match(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
 class BotCheckTotalMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
         total_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
-        gross_amount = nearest(context, named_params={'anchor': total_blockset.get_synthetic_block(), 'axis': 'right'})
+        colon = nearest(context, named_params={'anchor': total_blockset.get_synthetic_block(), 'axis': 'right'})
+        gross_amount = nearest(context, named_params={'anchor': colon.get_synthetic_block(), 'axis': 'right'})
         discount_amount = nearest(context, named_params={'anchor': gross_amount.get_synthetic_block(), 'axis': 'right'})
         net_amount = nearest(context, named_params={'anchor': discount_amount.get_synthetic_block(), 'axis': 'right'})
         net_less_discount = nearest(context, named_params={'anchor': net_amount.get_synthetic_block(), 'axis': 'right'})
-        return [gross_amount.blocks[0].word, discount_amount.blocks[0].word, net_amount.blocks[0].word,
-                net_less_discount.blocks[0].word]
+        return [gross_amount.blocks[0].word.replace(" ", ""), discount_amount.blocks[0].word.replace(" ", ""), net_amount.blocks[0].word.replace(" ", ""),
+                net_less_discount.blocks[0].word.replace(" ", "")]
 
 
 # 22Squared Extractor
@@ -437,7 +438,7 @@ class Squared(Extractor):
         extracted_params["Net Less Discount"] = net_less_disc
 
         # Check Totals
-        check_total = BotCheckTotalMatcher(anchor="Total:",
+        check_total = BotCheckTotalMatcher(anchor="Total",
                                            pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.check_total)
         extracted_params["Gross Total"] = [check_total[0]]
@@ -445,8 +446,4 @@ class Squared(Extractor):
         extracted_params["Net Total"] = [check_total[2]]
         extracted_params["Net Less Discount Total"] = [check_total[3]]
 
-        # Dump into JSON
-        with open('/home/adarsh/work/ar-automation/output/json/22Squared.json', 'w') as json_file:
-            logger.debug("Dumping into JSON")
-            json.dump(extracted_params, json_file, indent=4)
         return extracted_params

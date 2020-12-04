@@ -141,9 +141,9 @@ class TopRightCheckNumberMatcher(Matcher):
 class TopRightCheckDateMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
-        check_date_blockset = nearest(context, named_params={"anchor": anchor_blockset.get_synthetic_block(),
-                                                             'pattern': self.pattern,
-                                                             "axis": "right"})
+        check_date_blockset = nearest_by_query(context, named_params={"anchor": anchor_blockset.get_synthetic_block(),
+                                                                      'pattern': self.pattern,
+                                                                      "axis": "right"})
 
         # Regex Validations
         if not re.match(self.pattern, check_date_blockset.blocks[0].word):
@@ -160,24 +160,25 @@ class TopRightCheckAmountMatcher(Matcher):
                                                                         'pattern': self.pattern,
                                                                         "axis": "right"})
         # Regex Validations
-        if not re.match(self.pattern, check_amount_blockset.blocks[0].word):
+        if not re.match(self.pattern, check_amount_blockset.blocks[0].word.replace(" ", "")):
             logger.debug("Check amount Does Not Match pattern!!")
             raise Exception
 
-        return [check_amount_blockset.blocks[0].word]
+        return [check_amount_blockset.blocks[0].word.replace(" ", "")]
 
 
 class BotTotalAmountMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
-        total_amount_blockset = nearest_by_query(context, named_params={"anchor": anchor_blockset.get_synthetic_block(),
+        dollar_blockset = nearest_by_query(context, named_params={'anchor': anchor_blockset.get_synthetic_block(),
+                                                                  'pattern': '^\$', 'axis': 'right' })
+        total_amount_blockset = nearest(context, named_params={"anchor": dollar_blockset.get_synthetic_block(),
                                                                         'pattern': self.pattern, "axis": "right"})
-
         # Regex Validations
-        if not re.match(self.pattern, total_amount_blockset.blocks[0].word):
+        if not re.match(self.pattern, total_amount_blockset.blocks[0].word.replace(" ", "")):
             logger.debug("Total amount Does Not Match pattern!!")
             raise Exception
-        return [total_amount_blockset.blocks[0].word]
+        return [total_amount_blockset.blocks[0].word.replace(" ", "")]
 
 
 class LeftInvoiceNumberMatcher(Matcher):
@@ -223,14 +224,20 @@ class RightNetAmountMatcher(Matcher):
             "anchor": amount_blockset.get_synthetic_block(),
             "axis": "bot"})
         total_blockset = get_text(context, named_params={'query': "TOTAL", "level": "word"})
-        total_blockset_context = get_blockset_by_anchor_axis(context, named_params={"anchor": total_blockset.get_synthetic_block(),
-                                                                                    "axis": "top"})
-        amount_column_context = intersection(amount_blockset_context, total_blockset_context)
+        total_blockset_context = get_blockset_by_anchor_axis(context, named_params={
+            "anchor": total_blockset.get_synthetic_block(),
+            "axis": "top"})
+        product_blockset = get_text(context, named_params={'query': "Product", "level": "word"})
+        product_blockset_context = get_blockset_by_anchor_axis(context, named_params={
+            "anchor": product_blockset.get_synthetic_block(),
+            "axis": 'right'
+        })
+        new_blockset = intersection(amount_blockset_context, total_blockset_context)
+        new_blockset = intersection(new_blockset, product_blockset_context)
         temp = []
-        for block in amount_column_context.blocks:
-            if re.search(self.pattern, block.word):
-                print(block.word)
-                temp.append(block.word)
+        for block in new_blockset.blocks:
+            if re.search(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -286,7 +293,7 @@ class GroupM(Extractor):
         status_list.append(check_amount_status)  # append check amount status to overall status list
 
         # total-amount match
-        total_amount_context = bot(context, named_params={"argument": 20})
+        total_amount_context = bot(context, named_params={"argument": 40})
         total_amount_status = BotTotalAmountChecker(anchor="TOTAL").check(total_amount_context)
         if total_amount_status:
             self.total_blockset = total_amount_context
@@ -311,7 +318,7 @@ class GroupM(Extractor):
 
         # media-client match
         media_client_context = bot(context, named_params={"argument": 70})
-        media_client_status = BotMediaClientChecker(anchor="Media Client/Product").check(media_client_context)
+        media_client_status = BotMediaClientChecker(anchor="Media Client / Product").check(media_client_context)
         if media_client_status:
             self.media_client_blockset = media_client_context
 
@@ -348,15 +355,17 @@ class GroupM(Extractor):
         extracted_params.update({"Check date": check_date})
 
         # match and extract check-amount
-        check_amount = TopRightCheckAmountMatcher(anchor="Amount", pattern=r'\$[\d,\.]+').match_rule(
+        check_amount = TopRightCheckAmountMatcher(anchor="$",
+                                                  pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.check_amount_blockset)
-        check_amount = float(check_amount[0].replace('$', '').replace(',', ''))  # transforming check amount to float
+        # transforming check amount to float
         extracted_params.update({"Check amount": check_amount})
 
         # match and extract total-amount
-        total_amount = BotTotalAmountMatcher(anchor="TOTAL", pattern=r'\$[\d,\.]+').match_rule(self.total_blockset)
-        total_amount = float(total_amount[0].replace('$', '').replace(',', ''))  # transforming total amount to float
-        print(total_amount)
+        total_amount = BotTotalAmountMatcher(anchor="TOTAL",
+                                             pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.total_blockset)
+        # transforming total amount to float
         extracted_params.update({"Total amount": total_amount})
 
         # match and extract invoice-number
@@ -370,11 +379,12 @@ class GroupM(Extractor):
         extracted_params.update({"Period": period})
 
         # match and extract media-client
-        media_client = BotMediaClientMatcher(anchor="Media", pattern=r'\S').match_rule(self.media_client_blockset)
-        extracted_params.update({"Media Client/Product": media_client})
+        # TODO Try to fix this method
+        # media_client = BotMediaClientMatcher(anchor="Media", pattern=r'\S').match_rule(self.media_client_blockset)
+        # extracted_params.update({"Media Client/Product": media_client})
 
         # match and extract net amount
-        net_amount = RightNetAmountMatcher(anchor="Amount", pattern=r'\$[\d,\.]+').match_rule(self.net_amount_blockset)
+        net_amount = RightNetAmountMatcher(anchor="Amount", pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(self.net_amount_blockset)
         # net_amount = float(net_amount.replace('$', '').replace(',', ''))  # transforming net amount to float
         extracted_params.update({"Net Amount": net_amount})
 

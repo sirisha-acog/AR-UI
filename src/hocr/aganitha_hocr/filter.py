@@ -337,7 +337,7 @@ def intersection(context1: BlockSet, context2: BlockSet) -> BlockSet:
         logger.debug("DOES NOT INTERSECT")
     else:
         # Look up https://math.stackexchange.com/a/2477358 for logic
-        logger.debug("Blocks Do Intersect")
+        logger.debug("Blocks Intersect")
         new_x_top_left = max(context1.x_top_left, context2.x_top_left)
         new_y_top_left = max(context1.y_top_left, context2.y_top_left)
         new_x_bot_right = min(context1.x_bot_right, context2.x_bot_right)

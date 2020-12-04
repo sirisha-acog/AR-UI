@@ -14,6 +14,7 @@ from src.hocr.aganitha_hocr.matcher import Matcher
 import re
 import logging
 import pandas as pd
+
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
@@ -116,9 +117,9 @@ class BottomRightDiscountChecker(Predicate):
 class BottomRightNetAmountChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={'query': self.anchor,
-                                                    'level': "phrase"})
+                                                    'level': "word"})
         block = block_set.get_synthetic_block()
-        if len(block.word.split()) == 2:
+        if len(block.word.split()) == 1:
             return True
         else:
             return False
@@ -155,7 +156,7 @@ class TopRightCheckAmountMatcher(Matcher):
                                                  named_params={"anchor": anchor_blockset.get_synthetic_block(),
                                                                'pattern': self.pattern,
                                                                "axis": "right"})
-        return [check_amount_blockset.blocks[0].word]
+        return [check_amount_blockset.blocks[0].word.replace(" ", "")]
 
 
 class BottomLeftInvoiceNumberMatcher(Matcher):
@@ -195,11 +196,17 @@ class BottomInvoiceGrossAmountMatcher(Matcher):
                                                              named_params={
                                                                  "anchor": discount_blockset.get_synthetic_block(),
                                                                  "axis": 'left'})
+        description_blockset = get_text(context, named_params={"query": 'Description', "level": "word"})
+        right_description_blockset = get_blockset_by_anchor_axis(context,
+                                                                 named_params={
+                                                                     "anchor": description_blockset.get_synthetic_block(),
+                                                                     "axis": 'right'})
         new_blockset = intersection(below_gross_blockset, left_discount_blockset)
+        new_blockset = intersection(new_blockset, right_description_blockset)
         temp = []
         for block in new_blockset:
-            if re.match(self.pattern, block.word):
-                temp.append(block.word)
+            if re.match(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -211,7 +218,7 @@ class BottomRightDiscountMatcher(Matcher):
                                                                   "anchor": discount_blockset.get_synthetic_block(),
                                                                   "axis": 'bot'})
 
-        amount_blockset = get_text(context, named_params={"query": 'Gross', "level": "word"})
+        amount_blockset = get_text(context, named_params={"query": 'Amount', "level": "word"})
         right_amount_blockset = get_blockset_by_anchor_axis(context,
                                                             named_params={
                                                                 "anchor": amount_blockset.get_synthetic_block(),
@@ -224,11 +231,13 @@ class BottomRightDiscountMatcher(Matcher):
                                                             "axis": 'left'})
 
         new_blockset = intersection(below_discount_blockset, right_amount_blockset)
+
         new_blockset = intersection(new_blockset, left_net_blockset)
+
         temp = []
         for block in new_blockset:
-            if re.match(self.pattern, block.word):
-                temp.append(block.word)
+            if re.match(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -239,17 +248,16 @@ class BottomRightNetAmountMatcher(Matcher):
                                                          named_params={
                                                              "anchor": net_blockset.get_synthetic_block(),
                                                              "axis": 'bot'})
-        discount_blockset = get_text(context, named_params={"query": 'discount', "level": "word"})
+        discount_blockset = get_text(context, named_params={"query": 'Net', "level": "word"})
         right_discount_blockset = get_blockset_by_anchor_axis(context,
                                                               named_params={
                                                                   "anchor": discount_blockset.get_synthetic_block(),
                                                                   "axis": 'right'})
         new_blockset = intersection(below_net_blockset, right_discount_blockset)
-
         temp = []
         for block in new_blockset:
-            if re.match(self.pattern, block.word):
-                temp.append(block.word)
+            if re.match(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -274,28 +282,28 @@ class OMG(Extractor):
         status_list = []
 
         # Customer Name
-        context_customer_name = left(top(context, named_params={'argument': 30}), named_params={'argument': 60})
-        if TopLeftNameChecker(anchor="OMG").check(context_customer_name):
-            self.customer_name = context_customer_name
-        status_list.append(TopLeftNameChecker(anchor="OMG").check(context_customer_name))
+        # context_customer_name = left(top(context, named_params={'argument': 30}), named_params={'argument': 60})
+        # if TopLeftNameChecker(anchor="OMG").check(context_customer_name):
+        #     self.customer_name = context_customer_name
+        # status_list.append(TopLeftNameChecker(anchor="OMG").check(context_customer_name))
 
         # Date
         context_date = right(top(context, named_params={'argument': 30}), named_params={'argument': 60})
-        if TopRightDateChecker(anchor="DATE:").check(context_date):
+        if TopRightDateChecker(anchor="DATE").check(context_date):
             self.date = context_date
-        status_list.append(TopRightDateChecker(anchor="DATE:").check(context_date))
+        status_list.append(TopRightDateChecker(anchor="DATE").check(context_date))
 
         # Check Number
         context_check_number = right(top(context, named_params={'argument': 30}), named_params={'argument': 60})
-        if TopRightCheckNumberChecker(anchor="CHECK NUMBER:").check(context_check_number):
+        if TopRightCheckNumberChecker(anchor="CHECK NUMBER").check(context_check_number):
             self.check_number = context_check_number
-        status_list.append(TopRightCheckNumberChecker(anchor="CHECK NUMBER:").check(context_check_number))
+        status_list.append(TopRightCheckNumberChecker(anchor="CHECK NUMBER").check(context_check_number))
 
         # Check Amount
         context_check_amount = right(top(context, named_params={'argument': 30}), named_params={'argument': 60})
-        if TopRightCheckAmountChecker(anchor="CHECK AMOUNT:").check(context_check_amount):
+        if TopRightCheckAmountChecker(anchor="CHECK AMOUNT").check(context_check_amount):
             self.check_amount = context_check_amount
-        status_list.append(TopRightCheckAmountChecker(anchor="CHECK AMOUNT:").check(context_check_amount))
+        status_list.append(TopRightCheckAmountChecker(anchor="CHECK AMOUNT").check(context_check_amount))
 
         # Table Cols
         # Invoice Number
@@ -324,32 +332,30 @@ class OMG(Extractor):
 
         # Net Amount
         context_net_amount = right(bot(context, named_params={'argument': 60}), named_params={'argument': 40})
-        if BottomRightNetAmountChecker(anchor='Net Amount').check(context_net_amount):
+        if BottomRightNetAmountChecker(anchor='Net').check(context_net_amount):
             self.net_amount = context_net_amount
-        status_list.append(BottomRightNetAmountChecker(anchor='Net Amount').check(context_net_amount))
-
+        status_list.append(BottomRightNetAmountChecker(anchor='Net').check(context_net_amount))
+        print(status_list)
         return all(status_list)
 
     def extract(self, context: BlockSet) -> Any:
         extracted_params = {}
 
         # Date at top right
-        date = TopRightDateMatcher(anchor="DATE:", pattern=r'\d{2}\/\d{2}\/\d{4}').match_rule(self.date)
+        date = TopRightDateMatcher(anchor="DATE", pattern=r'\d{2}\/\d{2}\/\d{4}').match_rule(self.date)
         extracted_params["Date"] = date
-        print(date)
-
         # Check number
-        check_number = TopRightCheckNumberMatcher(anchor="NUMBER:", pattern=r'\d{10}').match_rule(
+        check_number = TopRightCheckNumberMatcher(anchor="NUMBER", pattern=r'\d{10}').match_rule(
             self.check_number)
         extracted_params.update({"Check Number": check_number})
 
         # Check Amount
-        check_amount = TopRightCheckAmountMatcher(anchor="AMOUNT:", pattern=r'\$[\d,\.]+').match_rule(
+        check_amount = TopRightCheckAmountMatcher(anchor="$", pattern=r'\$[\d,\.]+').match_rule(
             self.check_amount)
         extracted_params.update({"Check Amount": check_amount})
 
         # Invoice Number
-        inv_num = BottomLeftInvoiceNumberMatcher(anchor='Invoice', pattern=r'([0-9]{1,9})([\-])(\d{1})$').match_rule(
+        inv_num = BottomLeftInvoiceNumberMatcher(anchor='Invoice', pattern=r'([0-9]{1,9})([\-])(\d{1})').match_rule(
             self.invoice_number)
         extracted_params.update({"Invoice Number": inv_num})
 
@@ -360,40 +366,40 @@ class OMG(Extractor):
 
         # Gross Amount
         gross_amount = BottomInvoiceGrossAmountMatcher(anchor='Gross',
-                                                       pattern=r'^\$([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                                       pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
             self.gross_amount)
         extracted_params.update({"Gross Amount": gross_amount})
 
         # Discount
-        discount_amount = BottomRightDiscountMatcher(anchor='Discount',
-                                                     pattern=r'^\$([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
-            self.discount)
-        extracted_params.update({"Discount": discount_amount})
+        # discount_amount = BottomRightDiscountMatcher(anchor='Discount',
+        #                                              pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
+        #     self.discount)
+        # extracted_params.update({"Discount": discount_amount})
 
         # Net Amount
         net_amount = BottomRightNetAmountMatcher(anchor='Net',
-                                                 pattern=r'^\$([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                                 pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])$').match_rule(
             self.net_amount)
         extracted_params.update({"Net Amount": net_amount})
         logger.debug("Extracted Params : %r", extracted_params)
 
-        with open('/home/adarsh/work/ar-automation/output/json/OMG1.json', 'w') as json_file:
-            json.dump(extracted_params, json_file, indent=4)
-        with open('/home/adarsh/work/ar-automation/output/json/OMG1.json') as f:
-            data = json.load(f)
-            keys = []
-            for key, value in data.items():
-                keys.append(key)
-        df = pd.DataFrame(index=range(100), columns=keys)
-        for i in range(len(extracted_params["Invoice Number"])):
-            df["Date"][i] = extracted_params["Date"][0]
-            df["Check Number"][i] = extracted_params["Check Number"][0]
-            df["Check Amount"][i] = extracted_params["Check Amount"][0]
-            df["Invoice Number"][i] = extracted_params["Invoice Number"][i]
-            df["Invoice Date"][i] = extracted_params["Invoice Date"][i]
-            df["Gross Amount"][i] = extracted_params["Gross Amount"][i]
-            df["Discount"][i] = extracted_params["Discount"][i]
-            df["Net Amount"][i] = extracted_params["Net Amount"][i]
-
-        df = df.dropna()
-        return df
+        # with open('/home/adarsh/work/ar-automation/output/json/OMG1.json', 'w') as json_file:
+        #     json.dump(extracted_params, json_file, indent=4)
+        # with open('/home/adarsh/work/ar-automation/output/json/OMG1.json') as f:
+        #     data = json.load(f)
+        #     keys = []
+        #     for key, value in data.items():
+        #         keys.append(key)
+        # df = pd.DataFrame(index=range(100), columns=keys)
+        # for i in range(len(extracted_params["Invoice Number"])):
+        #     df["Date"][i] = extracted_params["Date"][0]
+        #     df["Check Number"][i] = extracted_params["Check Number"][0]
+        #     df["Check Amount"][i] = extracted_params["Check Amount"][0]
+        #     df["Invoice Number"][i] = extracted_params["Invoice Number"][i]
+        #     df["Invoice Date"][i] = extracted_params["Invoice Date"][i]
+        #     df["Gross Amount"][i] = extracted_params["Gross Amount"][i]
+        #     df["Discount"][i] = extracted_params["Discount"][i]
+        #     df["Net Amount"][i] = extracted_params["Net Amount"][i]
+        #
+        # df = df.dropna()
+        return extracted_params

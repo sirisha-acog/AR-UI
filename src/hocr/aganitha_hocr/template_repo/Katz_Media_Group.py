@@ -84,9 +84,14 @@ class TopLeftVoucherChecker(Predicate):
 
 class TopLeftGrsOrderChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
-        block_set = get_text(context, named_params={'query': self.anchor,
-                                                    'level': "word"})
-        block = block_set.get_synthetic_block()
+        try:
+            block_set = get_text(context, named_params={'query': self.anchor,
+                                                        'level': "word"})
+            block = block_set.get_synthetic_block()
+        except ValueError:
+            block_set = get_text(context, named_params={'query': '0rder',
+                                                        'level': "word"})
+            block = block_set.get_synthetic_block()
         if len(block.word.split()) == 1:
             return True
         else:
@@ -97,6 +102,7 @@ class TopRightGrsBilledChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={'query': self.anchor,
                                                     'level': "word"})
+        print([block.word for block in context])
         block = block_set.get_synthetic_block()
         if len(block.word.split()) == 1:
             return True
@@ -118,9 +124,9 @@ class TopRightDescriptionChecker(Predicate):
 class TopRightPaidAmountChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={'query': self.anchor,
-                                                    'level': "phrase"})
+                                                    'level': "word"})
         block = block_set.get_synthetic_block()
-        if len(block.word.split()) == 2:
+        if len(block.word.split()) == 1:
             return True
         else:
             return False
@@ -175,10 +181,16 @@ class TopLeftGrsOrderMatcher(Matcher):
         below_order_blockset = get_blockset_by_anchor_axis(context,
                                                            named_params={"anchor": order_blockset.get_synthetic_block(),
                                                                          "axis": 'bot'})
-        adj_blockset = get_text(context, named_params={"query": 'Adj', 'level': "word"})
-        left_adj_blockset = get_blockset_by_anchor_axis(context,
-                                                        named_params={"anchor": adj_blockset.get_synthetic_block()
-                                                            , "axis": 'left'})
+        try:
+            adj_blockset = get_text(context, named_params={"query": 'Adj', 'level': "word"})
+            left_adj_blockset = get_blockset_by_anchor_axis(context,
+                                                            named_params={"anchor": adj_blockset.get_synthetic_block()
+                                                                , "axis": 'left'})
+        except ValueError:
+            adj_blockset = get_text(context, named_params={"query": 'Ad', 'level': "word"})
+            left_adj_blockset = get_blockset_by_anchor_axis(context,
+                                                            named_params={"anchor": adj_blockset.get_synthetic_block()
+                                                                , "axis": 'left'})
         voucher_blockset = get_text(context, named_params={"query": 'Voucher', 'level': "word"})
         right_voucher_blockset = get_blockset_by_anchor_axis(context, named_params={
             "anchor": voucher_blockset.get_synthetic_block(),
@@ -188,7 +200,7 @@ class TopLeftGrsOrderMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word)
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -198,10 +210,16 @@ class TopLeftGrsBilledMatcher(Matcher):
         below_billed_blockset = get_blockset_by_anchor_axis(context, named_params={
             "anchor": billed_blockset.get_synthetic_block(),
             "axis": 'bot'})
-        adj_blockset = get_text(context, named_params={"query": 'Adj', 'level': "word"})
-        right_adj_blockset = get_blockset_by_anchor_axis(context,
-                                                         named_params={"anchor": adj_blockset.get_synthetic_block()
-                                                             , "axis": 'right'})
+        try:
+            adj_blockset = get_text(context, named_params={"query": 'Adj', 'level': "word"})
+            right_adj_blockset = get_blockset_by_anchor_axis(context,
+                                                             named_params={"anchor": adj_blockset.get_synthetic_block()
+                                                                 , "axis": 'right'})
+        except ValueError:
+            adj_blockset = get_text(context, named_params={"query": 'Ad', 'level': "word"})
+            right_adj_blockset = get_blockset_by_anchor_axis(context,
+                                                             named_params={"anchor": adj_blockset.get_synthetic_block()
+                                                                 , "axis": 'right'})
         adv_blockset = get_text(context, named_params={"query": 'Advertiser', 'level': 'word'})
         left_adv_blockset = get_blockset_by_anchor_axis(context,
                                                         named_params={"anchor": adv_blockset.get_synthetic_block()
@@ -211,7 +229,7 @@ class TopLeftGrsBilledMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word)
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -222,13 +240,14 @@ class TopRightPaidAmountMatcher(Matcher):
             "anchor": amount_blockset.get_synthetic_block(),
             "axis": 'bot'})
         description_blockset = get_text(context, named_params={"query": 'Description', "level": "word"})
-        right_description_blockset = get_blockset_by_anchor_axis(context, named_params={"anchor": description_blockset.get_synthetic_block(),
-                                                                                        "axis": 'right'})
+        right_description_blockset = get_blockset_by_anchor_axis(context, named_params={
+            "anchor": description_blockset.get_synthetic_block(),
+            "axis": 'right'})
         new_blockset = intersection(below_amount_blockset, right_description_blockset)
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word)
+                temp.append(block.word.replace(" ", ""))
         return temp
 
 
@@ -296,7 +315,7 @@ class Katz(Extractor):
         status_list.append(TopLeftGrsOrderChecker(anchor='Order').check(context_grs_order))
 
         # Grs Billed Check
-        context_grs_billed = right(top(context, named_params={'argument': 70}), named_params={'argument': 60})
+        context_grs_billed = right(top(context, named_params={'argument': 70}), named_params={'argument': 70})
         if TopRightGrsBilledChecker(anchor='Billed').check(context_grs_billed):
             self.grs_billed = context_grs_billed
         status_list.append(TopRightGrsBilledChecker(anchor='Billed').check(context_grs_billed))
@@ -310,11 +329,10 @@ class Katz(Extractor):
         # Paid Amount Check
         context_paid_amount = right(top(context, named_params={'argument': 70}), named_params={'argument': 50})
         print(context_paid_amount.__dict__)
-        if TopRightPaidAmountChecker(anchor='Paid Amount').check(context_paid_amount):
+        if TopRightPaidAmountChecker(anchor='Paid').check(context_paid_amount):
             self.paid_amount = context_paid_amount
-        status_list.append(TopRightPaidAmountChecker(anchor='Paid Amount').check(context_paid_amount))
-        print(status_list)
-        return True
+        status_list.append(TopRightPaidAmountChecker(anchor='Paid').check(context_paid_amount))
+        return all(status_list)
 
     def extract(self, context: BlockSet) -> Dict:
         extracted_params = {}
@@ -326,9 +344,9 @@ class Katz(Extractor):
 
         # # Bcst-Mth Extraction
         bcst_mth = TopLeftBcstMthMatcher(anchor='Bcst',
-                                         pattern=r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'(\d{2})$").match_rule(
+                                         pattern=r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'?/?(\d{2})$").match_rule(
             self.bcst_mth)
-        extracted_params['Bcst-Mth'] = bcst_mth
+        # extracted_params['Bcst-Mth'] = bcst_mth
 
         # Voucher Extraction
         voucher = TopLeftVoucherMatcher(anchor='Voucher', pattern=r'\d{8}$').match_rule(self.voucher)
@@ -341,10 +359,14 @@ class Katz(Extractor):
         extracted_params['Grs-Order'] = grs_order
 
         # Grs Billed Matcher
-        grs_billed = TopLeftGrsBilledMatcher(anchor='Billed', pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(self.grs_billed)
+        grs_billed = TopLeftGrsBilledMatcher(anchor='Billed',
+                                             pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.grs_billed)
         extracted_params['Grs-Billed'] = grs_billed
 
         # Paid amount Matcher
-        paid_amount = TopRightPaidAmountMatcher(anchor='Amount', pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(self.paid_amount)
+        paid_amount = TopRightPaidAmountMatcher(anchor='Amount',
+                                                pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.paid_amount)
         extracted_params['Paid Amount'] = paid_amount
         return extracted_params
