@@ -396,3 +396,33 @@ def get_blockset_by_anchor_axis(context: BlockSet, named_params: Dict) -> BlockS
 
         return BlockSet(parent_doc=context.parent_doc, x_top_left=context.x_top_left, y_top_left=bot_coord_of_anchor,
                         x_bot_right=context.x_bot_right, y_bot_right=context.y_bot_right, blocks=block_set.blocks)
+
+
+def nearest_block_with_delta(context: BlockSet, named_params: Dict):
+    """
+    test
+    named_params["row reference"] -> Block
+    named_params["column reference"] ->  Block
+    named_params["axis"] -> str
+    named_params["delta_x"] -> float
+    named_params["delta_y"] -> float
+    """
+    ytl_ref = named_params["row reference"].y_top_left
+    ybr_ref = named_params["row reference"].y_bot_right
+    xtl_ref = named_params["col reference"].x_top_left
+    xbr_ref = named_params["col reference"].x_bot_right
+    # print(named_params)
+    # print(ytl_ref, ybr_ref)
+    delta_y = float(named_params["delta_y"])
+    delta_x = float(named_params["delta_x"])
+    # print(delta)
+    if named_params['axis'] == "right":
+        # print(" Inside If")
+        for block in context.blocks:
+            # print(block.word, block.y_top_left, block.y_bot_right)
+            if (ytl_ref*(1-delta_x) <= float(block.y_top_left) <= ytl_ref*(1+delta_x)) or (ybr_ref*(1-delta_x) <= float(block.y_bot_right) <= ybr_ref*(1+delta_x)):
+                # print("Inside If")
+                if (xtl_ref * (1 - delta_y) <= float(block.x_top_left) <= xtl_ref * (1 + delta_y)) or (
+                        xbr_ref * (1 - delta_y) <= float(block.x_bot_right) <= xbr_ref * (1 + delta_y)):
+                    print(block.word)
+

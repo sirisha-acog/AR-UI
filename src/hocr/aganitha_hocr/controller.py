@@ -5,6 +5,7 @@ from src.hocr.aganitha_hocr.template_repo.OMG_USA_Media import OMG
 from src.hocr.aganitha_hocr.template_repo.Squared import Squared
 from src.hocr.aganitha_hocr.template_repo.IPG import IPG
 from src.hocr.aganitha_hocr.template_repo.Katz_Media_Group import Katz
+from src.hocr.aganitha_hocr.template_repo.Other import OtherDoc
 import logging
 import json
 import os
@@ -15,11 +16,12 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    # page = Page('/Users/adarsh/work/ar-automation/tmp/09.24.20-lb83198-1-17-addl-doc-01.jpg.hocr.hocrjs.html')
-    # template = Katz()
-    # extracted_values = template.execute(page.page_blockset)
-    # print(extracted_values)
+    page = Page('file:///Users/adarsh/test_vaccine.jpg.json.hocr.hocrjs.html')
+    template = OtherDoc()
+    extracted_values = template.execute(page.page_blockset)
+    print(extracted_values)
     # Path to Data - '/Users/adarsh/work/ar-automation/new_data'
+    """
     t0 = time.time()
     os.listdir('/Users/adarsh/work/ar-automation/new_data')
     # val = input("Enter your template: ")
@@ -218,3 +220,4 @@ if __name__ == "__main__":
     t1 = time.time()
     logger.debug("TOTAL EXECUTION TIME: %r", float(t1-t0))
     # print(katz)
+    """
