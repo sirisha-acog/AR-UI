@@ -1,4 +1,4 @@
-from src.hocr.aganitha_hocr.object_model import BlockSet
+from aganitha_hocr.object_model import BlockSet
 from typing import Dict
 
 

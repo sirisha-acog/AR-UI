@@ -1,12 +1,11 @@
-from src.hocr.aganitha_hocr.object_model import Page
-from src.hocr.aganitha_hocr.template_repo.MMS import MMS
-from src.hocr.aganitha_hocr.template_repo.GroupM import GroupM
-from src.hocr.aganitha_hocr.template_repo.OMG_USA_Media import OMG
-from src.hocr.aganitha_hocr.template_repo.Squared import Squared
-from src.hocr.aganitha_hocr.template_repo.IPG import IPG
-from src.hocr.aganitha_hocr.template_repo.Katz_Media_Group import Katz
-from src.hocr.aganitha_hocr.template_repo.Other import OtherDoc
-from src.hocr.aganitha_hocr.utils import TemplateDidNotMatchError
+from aganitha_hocr.object_model import Page
+from aganitha_hocr.template_repo.MMS import MMS
+from aganitha_hocr.template_repo.GroupM import GroupM
+from aganitha_hocr.template_repo.OMG_USA_Media import OMG
+from aganitha_hocr.template_repo.Squared import Squared
+from aganitha_hocr.template_repo.IPG import IPG
+from aganitha_hocr.template_repo.Katz_Media_Group import Katz
+from aganitha_hocr.template_repo.Other import OtherDoc
 import logging
 import json
 import os
