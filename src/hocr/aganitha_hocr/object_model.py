@@ -47,10 +47,10 @@ class BlockSet(object):
         block_list = []
         for block in self.blocks:
             if fuzz.ratio(query, block.word) > 80:
-                logger.info('Perfect Match!')
-                logger.info('Query: %r', query)
-                logger.info(' Block Word: %r', block.word)
-                logger.info('Coordinates are [x_tl,y_tl,x_br, y_br]: %r %r %r %r', block.x_top_left, block.y_top_left,
+                logger.debug('Perfect Match!')
+                logger.debug('Query: %r', query)
+                logger.debug(' Block Word: %r', block.word)
+                logger.debug('Coordinates are [x_tl,y_tl,x_br, y_br]: %r %r %r %r', block.x_top_left, block.y_top_left,
                             block.x_bot_right,
                             block.y_bot_right)
                 block_list.append(block)
