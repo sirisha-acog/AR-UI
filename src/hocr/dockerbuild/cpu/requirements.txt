@@ -8,6 +8,7 @@ chardet==3.0.4
 CIRpy==1.0.2
 click==7.1.2
 cssselect==1.1.0
+Cython==0.29.21
 docutils==0.14
 filelock==3.0.12
 fuzzywuzzy==0.18.0
@@ -25,7 +26,8 @@ python-dateutil==2.8.1
 python-Levenshtein==0.12.0
 pytz==2018.9
 PyYAML==3.13
-requests==2.21.0
+redis==3.5.3
+requests==2.25.0
 scipy==1.5.3
 Shapely==1.7.1
 six==1.12.0
@@ -33,6 +35,12 @@ snowballstemmer==1.2.1
 soupsieve==2.0.1
 Sphinx==1.8.5
 sphinx-rtd-theme==0.4.3
+sphinxcontrib-applehelp==1.0.2
+sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-htmlhelp==1.0.3
+sphinxcontrib-jsmath==1.0.1
+sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-serializinghtml==1.1.4
 sphinxcontrib-websupport==1.1.0
 typing-extensions==3.7.4.3
 urllib3==1.24.1

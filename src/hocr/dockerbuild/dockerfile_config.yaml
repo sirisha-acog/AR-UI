@@ -1,6 +1,6 @@
 # Uncomment the required sections depending on the use-case
 # Name of the base image 
-BASE_IMAGE_NAME: aganitha/geo-cpu
+BASE_IMAGE_NAME: aganitha/base-jupyterlab-gpu:py37-appmode
 
 # Flag to use cache while building the image before starting the container
 USE_CACHE: False
@@ -11,8 +11,8 @@ CREATE_USER: False
 USER_NAME: jupyter
 
 # Project Group Config
-GID: group_id
-GROUP_NAME: project_group
+# GID: group_id
+# GROUP_NAME: project_group
 
 # SYS_DEP, CUSTOM_DEP and PY_DEP should be under one directory
 # Name of the file containing the system level packages
@@ -22,7 +22,7 @@ GROUP_NAME: project_group
 CUSTOM_DEP: custom_steps.txt
 
 # Name of the file containing python dependencies
-#PY_DEP: python_requirements.txt
+PY_DEP: requirements.txt
 
 # Ports that should be exposed
 #PORTS: [8888]
@@ -34,5 +34,5 @@ WORKDIR: /home
 CMD: '["jupyter", "notebook", "--ip=*", "--no-browser"]'
 
 # Name of docker image to be built
-FINAL_IMAGE_NAME: aganitha/gen_image
+FINAL_IMAGE_NAME: aganitha/aganitha-hocr
 
