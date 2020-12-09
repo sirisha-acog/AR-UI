@@ -209,6 +209,8 @@ class MMS(Extractor):
         if TopRightCheckChecker(anchor="CHECK NUMBER:").check(context_check_num):
             self.check_number = context_check_num
         status_list.append(TopRightCheckChecker(anchor="CHECK NUMBER:").check(context_check_num))
+        if all(status_list) is False:
+            return False
 
         # Check Date Match
         context_date = right(top(context, named_params={'argument': 30}), named_params={'argument': 60})

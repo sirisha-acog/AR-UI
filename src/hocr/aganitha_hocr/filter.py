@@ -283,6 +283,8 @@ def get_text(context: BlockSet, named_params: Dict) -> BlockSet:
                 logger.debug("%r is not present in context. Status = %r", text, status)
             query_list.append(context.get_blockset_by_query(text))
         logger.debug("Ran Successfully. Status = %r", status)
+        if status is False:
+            return None
         base = query_list[0]
         base = base.blocks[0]
         block_set = [base]
