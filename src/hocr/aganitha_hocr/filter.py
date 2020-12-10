@@ -4,6 +4,7 @@ from aganitha_hocr.object_model import BlockSet, Block
 from scipy.spatial.distance import euclidean
 import logging
 import re
+import pandas as pd
 import shapely
 from shapely.geometry import box
 from fuzzywuzzy import fuzz
@@ -184,7 +185,7 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if re.search(named_params['pattern'], block.word):
+                if re.search(re.escape(named_params['pattern']), block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
                                                                                           named_params[
@@ -203,7 +204,7 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if re.search(named_params['pattern'], block.word):
+                if re.search(re.escape(named_params['pattern']), block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
                                                                                           named_params[
@@ -222,7 +223,7 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if re.search(named_params['pattern'], block.word):
+                if re.search(re.escape(named_params['pattern']), block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
                                                                                           named_params[
@@ -241,7 +242,7 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if re.search(named_params['pattern'], block.word):
+                if re.search(re.escape(named_params['pattern']), block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
                                                                                           named_params[
@@ -282,26 +283,28 @@ def get_text(context: BlockSet, named_params: Dict) -> BlockSet:
                 status = False
                 logger.debug("%r is not present in context. Status = %r", text, status)
             query_list.append(context.get_blockset_by_query(text))
-        logger.debug("Ran Successfully. Status = %r", status)
-        if status is False:
-            return None
-        base = query_list[0]
-        base = base.blocks[0]
-        block_set = [base]
-        for i in range(0, (len(query_list) - 1)):
-            anchor_block_set = query_list[i]
-            next_right = nearest_by_query(context, named_params={'anchor': anchor_block_set.blocks[0],
-                                                                 'pattern': query_list[i + 1].blocks[0].word,
-                                                                 'axis': "right"})
-            next_bot = nearest_by_query(context, named_params={'anchor': anchor_block_set.blocks[0],
-                                                               'pattern': query_list[i + 1].blocks[0].word,
-                                                               'axis': "bot"})
-            logger.debug("Next Right: %r", next_right.blocks[0].word)
-            logger.debug("Next Bot: %r", next_bot.blocks[0].word)
-            if next_right.blocks[0].word == query_list[i + 1].blocks[0].word:
-                block_set.append(next_right.blocks[0])
-            if next_bot.blocks[0].word == query_list[i + 1].blocks[0].word and next_right.blocks[0].word != query_list[i + 1].blocks[0].word:
-                block_set.append(next_bot.blocks[0])
+        if status:
+            logger.debug("Ran Successfully. Status = %r", status)
+            base = query_list[0]
+            base = base.blocks[0]
+            block_set = [base]
+            for i in range(0, (len(query_list) - 1)):
+                anchor_block_set = query_list[i]
+                next_right = nearest_by_query(context, named_params={'anchor': anchor_block_set.blocks[0],
+                                                                     'pattern': query_list[i + 1].blocks[0].word,
+                                                                     'axis': "right"})
+                next_bot = nearest_by_query(context, named_params={'anchor': anchor_block_set.blocks[0],
+                                                                   'pattern': query_list[i + 1].blocks[0].word,
+                                                                   'axis': "bot"})
+                logger.debug("Next Right: %r", next_right.blocks[0].word)
+                logger.debug("Next Bot: %r", next_bot.blocks[0].word)
+                if next_right.blocks[0].word == query_list[i + 1].blocks[0].word:
+                    block_set.append(next_right.blocks[0])
+                if next_bot.blocks[0].word == query_list[i + 1].blocks[0].word and \
+                        next_right.blocks[0].word != query_list[i + 1].blocks[0].word:
+                    block_set.append(next_bot.blocks[0])
+        else:
+            block_set = []
 
         return BlockSet(parent_doc=context.parent_doc, blocks=block_set)
 
@@ -352,6 +355,37 @@ def intersection(context1: BlockSet, context2: BlockSet) -> BlockSet:
         return BlockSet(parent_doc=context1.parent_doc, x_top_left=new_x_top_left, y_top_left=new_y_top_left,
                         x_bot_right=new_x_bot_right,
                         y_bot_right=new_y_bot_right, blocks=block_set.blocks)
+
+
+def loose_intersection(context1: BlockSet, context2: BlockSet, named_params: Dict) -> BlockSet:
+    """
+    It take two blocksets and returns blockset if there are any blocks inside the overlapping region.
+    The block need not be entirely inside overlapping region. The overlapping threshold need to be
+    passed while calling the filter
+    """
+
+    context1_polygon = box(context1.x_top_left, context1.y_top_left, context1.x_bot_right, context1.y_bot_right)
+    context2_polygon = box(context2.x_top_left, context2.y_top_left, context2.x_bot_right, context2.y_bot_right)
+    overlap_polygon_status = context1_polygon.intersects(context2_polygon)
+    if overlap_polygon_status:
+        overlap_polygon = box(*context1_polygon.intersection(context2_polygon).bounds)
+        block_df = pd.DataFrame(columns=['block', 'overlap area'])
+        for block in set(context1.blocks + context2.blocks):
+            block_polygon = box(block.x_top_left, block.y_top_left, block.x_bot_right, block.y_bot_right)
+            overlap_area = overlap_polygon.intersection(block_polygon).area
+            if block_polygon.area > 0 and overlap_area > 0:
+                percentage_overlap_area = 100 * overlap_area / block_polygon.area
+                if percentage_overlap_area > named_params['threshold']:
+                    block_dict = {'block': block, 'overlap area': percentage_overlap_area}
+                    block_df = block_df.append(block_dict, ignore_index=True)
+
+        block_df = block_df.sort_values(by='overlap area', ascending=False)
+        block_list = list(block_df['block'])
+
+        return BlockSet(parent_doc=context1.parent_doc, blocks=block_list)
+    else:
+        logger.debug('DOES NOT INERSECT')
+        return BlockSet(parent_doc=context1.parent_doc, blocks=[])
 
 
 def get_blockset_by_anchor_axis(context: BlockSet, named_params: Dict) -> BlockSet:
@@ -422,9 +456,9 @@ def nearest_block_with_delta(context: BlockSet, named_params: Dict):
         # print(" Inside If")
         for block in context.blocks:
             # print(block.word, block.y_top_left, block.y_bot_right)
-            if (ytl_ref*(1-delta_x) <= float(block.y_top_left) <= ytl_ref*(1+delta_x)) or (ybr_ref*(1-delta_x) <= float(block.y_bot_right) <= ybr_ref*(1+delta_x)):
+            if (ytl_ref * (1 - delta_x) <= float(block.y_top_left) <= ytl_ref * (1 + delta_x)) or (
+                    ybr_ref * (1 - delta_x) <= float(block.y_bot_right) <= ybr_ref * (1 + delta_x)):
                 # print("Inside If")
                 if (xtl_ref * (1 - delta_y) <= float(block.x_top_left) <= xtl_ref * (1 + delta_y)) or (
                         xbr_ref * (1 - delta_y) <= float(block.x_bot_right) <= xbr_ref * (1 + delta_y)):
                     print(block.word)
-
