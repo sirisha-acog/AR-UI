@@ -3,17 +3,18 @@
 # importing project dependencies
 from typing import Any, List, Union, Dict
 
-from src.hocr.aganitha_hocr.extractor import Extractor
-from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest, get_text, nearest_by_query, \
+from aganitha_hocr.extractor import Extractor
+from aganitha_hocr.filter import right, top, bot, left, nearest, get_text, nearest_by_query, \
     get_blockset_by_anchor_axis, intersection
-from src.hocr.aganitha_hocr.matcher import Matcher
-from src.hocr.aganitha_hocr.object_model import BlockSet
-from src.hocr.aganitha_hocr.predicate import Predicate
+from aganitha_hocr.matcher import Matcher
+from aganitha_hocr.object_model import BlockSet
+from aganitha_hocr.predicate import Predicate
 import re
 from dateutil.parser import parse
 import logging
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 
 # Checkers
@@ -22,10 +23,10 @@ class TopLeftCustomerNameChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "word"})
         if len(block_set) > 0:
-            logger.info('Customer name found!: %r', self.anchor)
+            logger.debug('Customer name found!: %r', self.anchor)
             return True
 
-        logger.info('Customer name not found!: %r', self.anchor)
+        logger.debug('Customer name not found!: %r', self.anchor)
         return False
 
 
@@ -34,21 +35,21 @@ class TopRightCheckNumberChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
-            logger.info('String Check number found!: %r', self.anchor)
+            logger.debug('String Check number found!: %r', self.anchor)
             return True
 
-        logger.info('String Check number not found!: %r', self.anchor)
+        logger.debug('String Check number not found!: %r', self.anchor)
         return False
 
 
 class TopRightCheckDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
-        logger.info('String Check date found!: %r', self.anchor)
+        logger.debug('String Check date found!: %r', self.anchor)
         if len(block_set) > 0:
             return True
 
-        logger.info('String Check date not found!: %r', self.anchor)
+        logger.debug('String Check date not found!: %r', self.anchor)
         return False
 
 
@@ -57,10 +58,10 @@ class TopRightCheckAmountChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
-            logger.info('String Check amount found!: %r', self.anchor)
+            logger.debug('String Check amount found!: %r', self.anchor)
             return True
 
-        logger.info('String Check amount not found!: %r', self.anchor)
+        logger.debug('String Check amount not found!: %r', self.anchor)
         return False
 
 
@@ -69,10 +70,10 @@ class BotTotalAmountChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "word"})
         if len(block_set) > 0:
-            logger.info('String total found!: %r', self.anchor)
+            logger.debug('String total found!: %r', self.anchor)
             return True
 
-        logger.info('String total not found!: %r', self.anchor)
+        logger.debug('String total not found!: %r', self.anchor)
         return False
 
 
@@ -81,10 +82,10 @@ class LeftInvoiceNumberChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
-            logger.info('String Invoice Number found!: %r', self.anchor)
+            logger.debug('String Invoice Number found!: %r', self.anchor)
             return True
 
-        logger.info('String Invoice Number not found!: %r', self.anchor)
+        logger.debug('String Invoice Number not found!: %r', self.anchor)
         return False
 
 
@@ -93,10 +94,10 @@ class LeftPeriodChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "word"})
         if len(block_set) > 0:
-            logger.info('String Period found!: %r', self.anchor)
+            logger.debug('String Period found!: %r', self.anchor)
             return True
 
-        logger.info('String Period not found!: %r', self.anchor)
+        logger.debug('String Period not found!: %r', self.anchor)
         return False
 
 
@@ -105,10 +106,10 @@ class BotMediaClientChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
-            logger.info('String Media Client/Product found!: %r', self.anchor)
+            logger.debug('String Media Client/Product found!: %r', self.anchor)
             return True
 
-        logger.info('String Media Client/Product not found!: %r', self.anchor)
+        logger.debug('String Media Client/Product not found!: %r', self.anchor)
         return False
 
 
@@ -117,10 +118,10 @@ class RightNetAmountChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         if len(block_set) > 0:
-            logger.info('String Net Amount found!: %r', self.anchor)
+            logger.debug('String Net Amount found!: %r', self.anchor)
             return True
 
-        logger.info('String Net Amount not found!: %r', self.anchor)
+        logger.debug('String Net Amount not found!: %r', self.anchor)
         return False
 
 
@@ -171,9 +172,9 @@ class BotTotalAmountMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         dollar_blockset = nearest_by_query(context, named_params={'anchor': anchor_blockset.get_synthetic_block(),
-                                                                  'pattern': '^\$', 'axis': 'right' })
+                                                                  'pattern': '^\$', 'axis': 'right'})
         total_amount_blockset = nearest(context, named_params={"anchor": dollar_blockset.get_synthetic_block(),
-                                                                        'pattern': self.pattern, "axis": "right"})
+                                                               'pattern': self.pattern, "axis": "right"})
         # Regex Validations
         if not re.match(self.pattern, total_amount_blockset.blocks[0].word.replace(" ", "")):
             logger.debug("Total amount Does Not Match pattern!!")
@@ -384,7 +385,9 @@ class GroupM(Extractor):
         # extracted_params.update({"Media Client/Product": media_client})
 
         # match and extract net amount
-        net_amount = RightNetAmountMatcher(anchor="Amount", pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(self.net_amount_blockset)
+        net_amount = RightNetAmountMatcher(anchor="Amount",
+                                           pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
+            self.net_amount_blockset)
         # net_amount = float(net_amount.replace('$', '').replace(',', ''))  # transforming net amount to float
         extracted_params.update({"Net Amount": net_amount})
 

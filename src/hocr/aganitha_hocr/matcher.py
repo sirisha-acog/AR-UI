@@ -1,4 +1,4 @@
-from src.hocr.aganitha_hocr.object_model import BlockSet, Block
+from aganitha_hocr.object_model import BlockSet, Block
 from typing import Optional, List, Union, Tuple, Any
 
 

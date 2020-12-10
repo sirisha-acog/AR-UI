@@ -3,16 +3,17 @@
 # importing project dependencies
 from typing import Any, List, Dict
 
-from src.hocr.aganitha_hocr.extractor import Extractor
-from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
+from aganitha_hocr.extractor import Extractor
+from aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
     get_blockset_by_anchor_axis, intersection
-from src.hocr.aganitha_hocr.object_model import BlockSet
-from src.hocr.aganitha_hocr.predicate import Predicate
-from src.hocr.aganitha_hocr.matcher import Matcher
+from aganitha_hocr.object_model import BlockSet
+from aganitha_hocr.predicate import Predicate
+from aganitha_hocr.matcher import Matcher
 import re
 import logging
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 
 # PREDICATES -->
@@ -102,7 +103,7 @@ class TopRightGrsBilledChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={'query': self.anchor,
                                                     'level': "word"})
-        print([block.word for block in context])
+        # print([block.word for block in context])
         block = block_set.get_synthetic_block()
         if len(block.word.split()) == 1:
             return True
@@ -271,9 +272,9 @@ class Katz(Extractor):
     def match(self, context: BlockSet) -> bool:
         status_list = []
         # Customer Name
-        print(context.__dict__)
+        # print(context.__dict__)
         context_customer_name = left(top(context, named_params={'argument': 50}), named_params={'argument': 40})
-        print(context_customer_name.__dict__)
+        # print(context_customer_name.__dict__)
         if TopLeftCustomerNameChecker(anchor='Katz Media Group').check(context_customer_name):
             self.customer_name = context_customer_name
         status_list.append(TopLeftCustomerNameChecker(anchor='Katz Media Group').check(context_customer_name))
@@ -328,7 +329,7 @@ class Katz(Extractor):
 
         # Paid Amount Check
         context_paid_amount = right(top(context, named_params={'argument': 70}), named_params={'argument': 50})
-        print(context_paid_amount.__dict__)
+        # print(context_paid_amount.__dict__)
         if TopRightPaidAmountChecker(anchor='Paid').check(context_paid_amount):
             self.paid_amount = context_paid_amount
         status_list.append(TopRightPaidAmountChecker(anchor='Paid').check(context_paid_amount))

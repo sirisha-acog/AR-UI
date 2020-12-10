@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from src.hocr.aganitha_hocr.object_model import BlockSet, Block
+from aganitha_hocr.object_model import BlockSet, Block
 from scipy.spatial.distance import euclidean
 import logging
 import re
@@ -11,7 +11,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.ERROR)
 
 # TODO: 3. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
 

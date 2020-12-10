@@ -5,12 +5,12 @@ import csv
 import json
 from typing import Any, List, Dict
 
-from src.hocr.aganitha_hocr.extractor import Extractor
-from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
+from aganitha_hocr.extractor import Extractor
+from aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
     get_blockset_by_anchor_axis, intersection, nearest_by_query
-from src.hocr.aganitha_hocr.object_model import BlockSet
-from src.hocr.aganitha_hocr.predicate import Predicate
-from src.hocr.aganitha_hocr.matcher import Matcher
+from aganitha_hocr.object_model import BlockSet
+from aganitha_hocr.predicate import Predicate
+from aganitha_hocr.matcher import Matcher
 import re
 import logging
 import pandas as pd
@@ -20,7 +20,7 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.ERROR)
 
 # PREDICATES -->
 class TopLeftCustomerNameChecker(Predicate):
@@ -126,10 +126,10 @@ class TopRightNetChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={'query': self.anchor,
                                                     'level': "word"})
-        for block in block_set:
-            print(block.word)
+        # for block in block_set:
+        #     print(block.word)
         block = block_set.get_synthetic_block()
-        print(block.word.split())
+        # print(block.word.split())
         if len(block.word.split()) == 1:
             return True
         else:

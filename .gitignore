@@ -5,7 +5,9 @@ new_data/
 output/
 test/
 experiment/
-
+demo_images/
+test2/
+*.*.ipynb
 
 # Packages #
 ############

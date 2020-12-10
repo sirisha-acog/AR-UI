@@ -1,15 +1,15 @@
 from typing import List, Dict, Any
 
-from src.hocr.aganitha_hocr.matcher import Matcher
-from src.hocr.aganitha_hocr.object_model import BlockSet
-from src.hocr.aganitha_hocr.predicate import Predicate
+from aganitha_hocr.matcher import Matcher
+from aganitha_hocr.object_model import BlockSet
+from aganitha_hocr.predicate import Predicate
 
 
 class Extractor(object):
 
     def execute(self, context: BlockSet):
         if not self.match(context):
-            raise Exception
+            raise TemplateDidNotMatchError()
         else:
             extracted_data = self.extract(context)
 
@@ -22,5 +22,5 @@ class Extractor(object):
         """
         pass
 
-    def extract(self, context: BlockSet) -> Dict[str,Any]:
+    def extract(self, context: BlockSet) -> Dict[str, Any]:
         pass
