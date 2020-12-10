@@ -14,6 +14,7 @@ from dateutil.parser import parse
 import logging
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 
 # Checkers
@@ -171,9 +172,9 @@ class BotTotalAmountMatcher(Matcher):
     def match_rule(self, context: BlockSet) -> List[str]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         dollar_blockset = nearest_by_query(context, named_params={'anchor': anchor_blockset.get_synthetic_block(),
-                                                                  'pattern': '^\$', 'axis': 'right' })
+                                                                  'pattern': '^\$', 'axis': 'right'})
         total_amount_blockset = nearest(context, named_params={"anchor": dollar_blockset.get_synthetic_block(),
-                                                                        'pattern': self.pattern, "axis": "right"})
+                                                               'pattern': self.pattern, "axis": "right"})
         # Regex Validations
         if not re.match(self.pattern, total_amount_blockset.blocks[0].word.replace(" ", "")):
             logger.debug("Total amount Does Not Match pattern!!")
@@ -384,7 +385,9 @@ class GroupM(Extractor):
         # extracted_params.update({"Media Client/Product": media_client})
 
         # match and extract net amount
-        net_amount = RightNetAmountMatcher(anchor="Amount", pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(self.net_amount_blockset)
+        net_amount = RightNetAmountMatcher(anchor="Amount",
+                                           pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
+            self.net_amount_blockset)
         # net_amount = float(net_amount.replace('$', '').replace(',', ''))  # transforming net amount to float
         extracted_params.update({"Net Amount": net_amount})
 

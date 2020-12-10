@@ -10,7 +10,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.ERROR)
 
 # TODO: 3. Given a query containing multiple strings, we should be able to identify block sets with some tolerance T.
 

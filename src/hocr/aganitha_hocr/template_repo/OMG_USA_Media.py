@@ -20,7 +20,7 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.ERROR)
 
 # PREDICATES -->
 class TopLeftNameChecker(Predicate):
@@ -83,8 +83,8 @@ class BottomLeftInvoiceDateChecker(Predicate):
     def check(self, context: BlockSet) -> bool:
         block_set = get_text(context, named_params={'query': self.anchor,
                                                     'level': "word"})
-        for block in block_set:
-            print(block.word)
+        # for block in block_set:
+            # print(block.word)
         block = block_set.get_synthetic_block()
         if len(block.word.split()) == 1:
             return True
@@ -335,7 +335,7 @@ class OMG(Extractor):
         if BottomRightNetAmountChecker(anchor='Net').check(context_net_amount):
             self.net_amount = context_net_amount
         status_list.append(BottomRightNetAmountChecker(anchor='Net').check(context_net_amount))
-        print(status_list)
+        # print(status_list)
         return all(status_list)
 
     def extract(self, context: BlockSet) -> Any:

@@ -15,7 +15,7 @@ import pandas as pd
 import pathlib
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.ERROR)
 
 def main(filepath):
     # filepath = '/Users/adarsh/test_vaccine.jpg.json.hocr.hocrjs.html'

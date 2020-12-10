@@ -13,6 +13,7 @@ import re
 import logging
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 
 # PREDICATES
@@ -221,8 +222,8 @@ class MMS(Extractor):
 
         # Check Amount Paid
         context_amount_paid = right(top(context, named_params={'argument': 20}), named_params={'argument': 60})
-        for block in context_amount_paid:
-            print(block.word)
+        # for block in context_amount_paid:
+        #     print(block.word)
         if TopRightAmountChecker(anchor="AMOUNT PAID").check(context_amount_paid):
             self.amount_paid = context_amount_paid
         status_list.append(TopRightAmountChecker(anchor="AMOUNT PAID").check(context_amount_paid))
@@ -252,28 +253,23 @@ class MMS(Extractor):
         # Match And Extract Date
         date = TopRightDateMatcher(anchor="DATE", pattern=r'[a-zA-Z]').match_rule(self.date)
         extracted_params["DATE"] = date
-        print(date)
         # Match and Extract Check
         check_num = TopRightCheckMatcher(anchor="NUMBER", pattern=r'^\d{10}$').match_rule(self.check_number)
         extracted_params["CHECK NUMBER"] = check_num
-        print(check_num)
         # Match and Extract Amount Paid
         amount = TopRightAmountMatcher(anchor="$",
                                        pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.amount_paid)
         extracted_params["AMOUNT PAID"] = amount
-        print(amount)
         # Match Invoice Date
         inv_date = BottomLeftInvoiceDateMatcher(anchor="Date", pattern=r'(\d{2})[/.-](\d{2})[/.-](\d{2})$').match_rule(
             self.invoice_date)
         extracted_params["Invoice Date"] = inv_date
-        print(inv_date)
         # Match Invoice Number
         inv_num = BottomLeftInvoiceNumberMatcher(anchor="Number",
                                                  pattern=r'([A-Z]?)([0-9]{1,9})([\-])(\d{1})$').match_rule(
             self.invoice_number)
         extracted_params["Invoice Number"] = inv_num
-        print(inv_num)
         # Match Amount in table
         amount_in_table = BottomRightAmountMatcher(anchor="Amount",
                                                    pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(

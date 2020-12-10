@@ -13,7 +13,7 @@ import re
 import logging
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.ERROR)
 
 # PREDICATES -->
 class TopLeftCustomerNameChecker(Predicate):
@@ -280,8 +280,8 @@ class IPG(Extractor):
         if BottomRightCheckTotalChecker(anchor='Check Total').check(context_check_total):
             self.check_total = context_check_total
         status_list.append(BottomRightCheckTotalChecker(anchor='Check Total').check(context_check_total))
-        print(status_list)
-        return True
+        # print(status_list)
+        return all(status_list)
 
     def extract(self, context: BlockSet) -> Dict:
         extracted_params = {}

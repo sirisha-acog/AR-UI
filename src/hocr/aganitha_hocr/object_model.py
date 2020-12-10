@@ -6,7 +6,7 @@ import logging
 from aganitha_hocr.utils import Utils
 
 logger = logging.getLogger(__name__)
-
+logger.setLevel(logging.ERROR)
 # import collections
 
 # TypeVars
