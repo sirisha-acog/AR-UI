@@ -1,9 +1,8 @@
 from typing import List, Dict, Any
 
-from src.hocr.aganitha_hocr.matcher import Matcher
-from src.hocr.aganitha_hocr.object_model import BlockSet
-from src.hocr.aganitha_hocr.predicate import Predicate
-from src.hocr.aganitha_hocr.utils import TemplateDidNotMatchError
+from aganitha_hocr.matcher import Matcher
+from aganitha_hocr.object_model import BlockSet
+from aganitha_hocr.predicate import Predicate
 
 
 class Extractor(object):

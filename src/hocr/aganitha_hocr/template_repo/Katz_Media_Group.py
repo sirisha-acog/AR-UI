@@ -3,12 +3,12 @@
 # importing project dependencies
 from typing import Any, List, Dict
 
-from src.hocr.aganitha_hocr.extractor import Extractor
-from src.hocr.aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
+from aganitha_hocr.extractor import Extractor
+from aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
     get_blockset_by_anchor_axis, intersection
-from src.hocr.aganitha_hocr.object_model import BlockSet
-from src.hocr.aganitha_hocr.predicate import Predicate
-from src.hocr.aganitha_hocr.matcher import Matcher
+from aganitha_hocr.object_model import BlockSet
+from aganitha_hocr.predicate import Predicate
+from aganitha_hocr.matcher import Matcher
 import re
 import logging
 

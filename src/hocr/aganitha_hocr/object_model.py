@@ -3,7 +3,7 @@ from typing import TypeVar, List, Optional, Union
 from aganitha_parsing_utils.html import HTMLParsingUtils
 from fuzzywuzzy import fuzz
 import logging
-from src.hocr.aganitha_hocr.utils import Utils
+from aganitha_hocr.utils import Utils
 
 logger = logging.getLogger(__name__)
 
