@@ -17,7 +17,6 @@ import pathlib
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
-
 def main(filepath):
     # filepath = '/Users/adarsh/test_vaccine.jpg.json.hocr.hocrjs.html'
     page = Page(filepath)
@@ -27,10 +26,11 @@ def main(filepath):
     for template in templates:
         try:
             extracted_values = template.execute(page.page_blockset)
-            # print(extracted_values)
+
+            print(extracted_values)
             return file, extracted_values, template
         except Exception:
-            logger.debug("Moving to new template")
+            print("Moving to new template")
 
 
 def batch_processing(path):
@@ -250,4 +250,4 @@ if __name__ == "__main__":
         filepath='/Users/adarsh/work/ar-automation/new_data/MMS/07.07.20-lb83143-1-2-addl-doc-01.jpg.hocr.hocrjs.html')
 
     store_path = '/Users/adarsh/work/ar-automation/test2'
-    extract_data(file, temp, extracted_params, store_path)
+    extract_data(file,temp, extracted_params, store_path)

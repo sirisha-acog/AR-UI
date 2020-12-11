@@ -134,6 +134,7 @@ class TopRightDateMatcher(Matcher):
         if len(block_set.blocks) == 1:
             date = nearest_by_query(context, named_params={'anchor': block_set.blocks[0], 'pattern': self.pattern,
                                                            'axis': "right"})
+            print(date.__dict__)
             return [date.blocks[0].word]
 
 
@@ -342,15 +343,15 @@ class OMG(Extractor):
         extracted_params = {}
 
         # Date at top right
-        date = TopRightDateMatcher(anchor="DATE", pattern=r'\d{2}\/\d{2}\/\d{4}').match_rule(self.date)
+        date = TopRightDateMatcher(anchor="DATE", pattern=r'^\d{2}/\d{2}/\d{4}$').match_rule(self.date)
         extracted_params["Date"] = date
         # Check number
-        check_number = TopRightCheckNumberMatcher(anchor="NUMBER", pattern=r'\d{10}').match_rule(
+        check_number = TopRightCheckNumberMatcher(anchor="NUMBER", pattern=r'^\d{10}$').match_rule(
             self.check_number)
         extracted_params.update({"Check Number": check_number})
 
         # Check Amount
-        check_amount = TopRightCheckAmountMatcher(anchor="$", pattern=r'\$[\d,\.]+').match_rule(
+        check_amount = TopRightCheckAmountMatcher(anchor="$", pattern=r'$[\d,\.]+').match_rule(
             self.check_amount)
         extracted_params.update({"Check Amount": check_amount})
 
@@ -383,23 +384,4 @@ class OMG(Extractor):
         extracted_params.update({"Net Amount": net_amount})
         logger.debug("Extracted Params : %r", extracted_params)
 
-        # with open('/home/adarsh/work/ar-automation/output/json/OMG1.json', 'w') as json_file:
-        #     json.dump(extracted_params, json_file, indent=4)
-        # with open('/home/adarsh/work/ar-automation/output/json/OMG1.json') as f:
-        #     data = json.load(f)
-        #     keys = []
-        #     for key, value in data.items():
-        #         keys.append(key)
-        # df = pd.DataFrame(index=range(100), columns=keys)
-        # for i in range(len(extracted_params["Invoice Number"])):
-        #     df["Date"][i] = extracted_params["Date"][0]
-        #     df["Check Number"][i] = extracted_params["Check Number"][0]
-        #     df["Check Amount"][i] = extracted_params["Check Amount"][0]
-        #     df["Invoice Number"][i] = extracted_params["Invoice Number"][i]
-        #     df["Invoice Date"][i] = extracted_params["Invoice Date"][i]
-        #     df["Gross Amount"][i] = extracted_params["Gross Amount"][i]
-        #     df["Discount"][i] = extracted_params["Discount"][i]
-        #     df["Net Amount"][i] = extracted_params["Net Amount"][i]
-        #
-        # df = df.dropna()
         return extracted_params
