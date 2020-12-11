@@ -402,7 +402,6 @@ class Squared(Extractor):
         # Check Number
         check = TopRightCheckMatcher(anchor='Check', pattern=r'\d{9}').match_rule(self.check_number)
         extracted_params["Check Number"] = check
-        print(check)
 
         # Invoice Date
         inv_date = TopLeftInvoiceDateMatcher(anchor='Inv', pattern=r'\d{2}\/\d{2}\/\d{2}').match_rule(self.inv_date)
