@@ -26,10 +26,10 @@ def main(filepath):
     for template in templates:
         try:
             extracted_values = template.execute(page.page_blockset)
-            print(extracted_values)
+            # print(extracted_values)
             return file, extracted_values, template
         except Exception:
-            print("Moving to new template")
+            logger.debug("Moving to new template")
 
 
 def batch_processing(path):
