@@ -370,4 +370,5 @@ class Katz(Extractor):
                                                 pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.paid_amount)
         extracted_params['Paid Amount'] = paid_amount
+        extracted_params["Customer"] = "Katz"
         return extracted_params

@@ -319,5 +319,5 @@ class IPG(Extractor):
                                                    pattern=r'^([0-9]{1,3}\s([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])$').match_rule(
             self.check_total)
         extracted_params['Check Total'] = check_total
-
+        extracted_params["Customer"] = "IPG"
         return extracted_params

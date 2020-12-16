@@ -383,5 +383,5 @@ class OMG(Extractor):
             self.net_amount)
         extracted_params.update({"Net Amount": net_amount})
         logger.debug("Extracted Params : %r", extracted_params)
-
+        extracted_params.update({"Customer": "OMG"})
         return extracted_params

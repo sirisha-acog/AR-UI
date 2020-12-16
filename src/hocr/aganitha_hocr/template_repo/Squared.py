@@ -444,5 +444,5 @@ class Squared(Extractor):
         extracted_params["Discount Total"] = [check_total[1]]
         extracted_params["Net Total"] = [check_total[2]]
         extracted_params["Net Less Discount Total"] = [check_total[3]]
-
+        extracted_params["Customer"] = "22Squared"
         return extracted_params

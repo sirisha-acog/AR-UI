@@ -390,5 +390,6 @@ class GroupM(Extractor):
             self.net_amount_blockset)
         # net_amount = float(net_amount.replace('$', '').replace(',', ''))  # transforming net amount to float
         extracted_params.update({"Net Amount": net_amount})
+        extracted_params.update({"Customer": "GroupM"})
 
         return extracted_params

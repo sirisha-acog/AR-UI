@@ -275,4 +275,5 @@ class MMS(Extractor):
                                                    pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.amount)
         extracted_params["Amount"] = amount_in_table
+        extracted_params["Customer"] = "MMS"
         return extracted_params
