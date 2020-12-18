@@ -9,11 +9,10 @@ class Extractor(object):
 
     def execute(self, context: BlockSet):
         if not self.match(context):
-            raise TemplateDidNotMatchError()
+            raise Exception
         else:
             extracted_data = self.extract(context)
-
-        return extracted_data
+            return extracted_data
 
     def match(self, context: BlockSet) -> bool:
         """

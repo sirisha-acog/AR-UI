@@ -5,7 +5,7 @@ from typing import Any, List, Dict
 
 from aganitha_hocr.extractor import Extractor
 from aganitha_hocr.filter import right, top, bot, left, nearest, get_text, \
-    get_blockset_by_anchor_axis, intersection
+    get_blockset_by_anchor_axis, intersection, nearest_by_query
 from aganitha_hocr.object_model import BlockSet
 from aganitha_hocr.predicate import Predicate
 from aganitha_hocr.matcher import Matcher
@@ -133,6 +133,39 @@ class TopRightPaidAmountChecker(Predicate):
             return False
 
 
+class BottomCheckNumberChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, named_params={'query': self.anchor,
+                                                    'level': "phrase"})
+        block = block_set.get_synthetic_block()
+        if len(block.word.split()) == 2:
+            return True
+        else:
+            return False
+
+
+class BottomCheckDateChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, named_params={'query': self.anchor,
+                                                    'level': "phrase"})
+        block = block_set.get_synthetic_block()
+        if len(block.word.split()) == 2:
+            return True
+        else:
+            return False
+
+
+class BottomTotalPaidAmountChecker(Predicate):
+    def check(self, context: BlockSet) -> bool:
+        block_set = get_text(context, named_params={'query': self.anchor,
+                                                    'level': "phrase"})
+        block = block_set.get_synthetic_block()
+        if len(block.word.split()) == 3:
+            return True
+        else:
+            return False
+
+
 # MATCHERS -->
 
 
@@ -252,6 +285,51 @@ class TopRightPaidAmountMatcher(Matcher):
         return temp
 
 
+class BottomCheckNumberMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        number_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        below_num_blockset = get_blockset_by_anchor_axis(context,
+                                                         named_params={"anchor": number_blockset.get_synthetic_block(),
+                                                                       "axis": 'bot'})
+        temp = []
+        for block in below_num_blockset:
+            if re.match(self.pattern, block.word):
+                temp.append(block.word)
+        return temp
+
+
+class BottomCheckDateMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        date_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        below_date_blockset = get_blockset_by_anchor_axis(context,
+                                                          named_params={"anchor": date_blockset.get_synthetic_block(),
+                                                                        "axis": 'bot'})
+        month_block = nearest_by_query(context, named_params={"anchor": date_blockset.get_synthetic_block(), "axis": "bot", "pattern": self.pattern})
+        date_block = nearest_by_query(context, named_params={"anchor": date_blockset.get_synthetic_block(), "axis": "bot", "pattern": r'^\d{2}$'})
+        year_block = nearest_by_query(context, named_params={"anchor": date_blockset.get_synthetic_block(), "axis": "bot", "pattern": r'^\d{4}$'})
+        temp = month_block.blocks[0].word + '/' + date_block.blocks[0].word + '/' + year_block.blocks[0].word
+        return [temp]
+
+
+class BottomTotalAmountPaidMatcher(Matcher):
+    def match_rule(self, context: BlockSet) -> List[str]:
+        amount_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
+        below_amount_blockset = get_blockset_by_anchor_axis(context,
+                                                            named_params={
+                                                                "anchor": amount_blockset.get_synthetic_block(),
+                                                                "axis": 'bot'})
+        date_blockset = get_text(context, named_params={"query": 'Date', "level": "word"})
+        right_date_blockset = get_blockset_by_anchor_axis(context,
+                                                          named_params={"anchor": date_blockset.get_synthetic_block(),
+                                                                        "axis": 'right'})
+        new_blockset = intersection(below_amount_blockset, right_date_blockset)
+        temp = []
+        for block in new_blockset:
+            if re.match(self.pattern, block.word.replace(" ", "")):
+                temp.append(block.word.replace(" ", ""))
+        return temp
+
+
 # Katz Class Extractor
 
 class Katz(Extractor):
@@ -268,6 +346,9 @@ class Katz(Extractor):
         self.grs_billed: BlockSet = None
         self.description: BlockSet = None
         self.paid_amount: BlockSet = None
+        self.check_number: BlockSet = None
+        self.check_date: BlockSet = None
+        self.total_amount_paid: BlockSet = None
 
     def match(self, context: BlockSet) -> bool:
         status_list = []
@@ -333,6 +414,25 @@ class Katz(Extractor):
         if TopRightPaidAmountChecker(anchor='Paid').check(context_paid_amount):
             self.paid_amount = context_paid_amount
         status_list.append(TopRightPaidAmountChecker(anchor='Paid').check(context_paid_amount))
+
+        # Check Number Check
+        context_check_number = bot(context, named_params={'argument': 30})
+        if BottomCheckNumberChecker(anchor='Check No').check(context_check_number):
+            self.check_number = context_check_number
+        status_list.append(BottomCheckNumberChecker(anchor='Check No').check(context_check_number))
+
+        # Check Date
+        context_check_date = bot(context, named_params={'argument': 30})
+        if BottomCheckDateChecker(anchor='Check Date').check(context_check_date):
+            self.check_date = context_check_date
+        status_list.append(BottomCheckDateChecker(anchor='Check Date').check(context_check_date))
+
+        # Total Amount Paid
+        context_total_amount_paid = bot(context, named_params={'argument': 30})
+        if BottomTotalPaidAmountChecker(anchor='Total Paid Amount').check(context_total_amount_paid):
+            self.total_amount_paid = context_total_amount_paid
+        status_list.append(BottomTotalPaidAmountChecker(anchor='Total Paid Amount').check(context_total_amount_paid))
+        # print(status_list)
         return all(status_list)
 
     def extract(self, context: BlockSet) -> Dict:
@@ -370,5 +470,21 @@ class Katz(Extractor):
                                                 pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.paid_amount)
         extracted_params['Paid Amount'] = paid_amount
+
+        # Check Number Matcher
+        check_number = BottomCheckNumberMatcher(anchor='No', pattern=r'^\d{6,9}$').match_rule(self.check_number)
+        extracted_params['Check Number'] = check_number[0]
+
+        # Check Date Matcher
+        check_date = BottomCheckDateMatcher(anchor='Date',
+                                            pattern=r'^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)').match_rule(
+            self.check_date)
+        extracted_params['Check Date'] = check_date[0]
+
+        # Total Amount Paid
+        total = BottomTotalAmountPaidMatcher(anchor='Total',
+                                             pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+            self.total_amount_paid)
+        extracted_params["Total"] = total[0]
         extracted_params["Customer"] = "Katz"
         return extracted_params

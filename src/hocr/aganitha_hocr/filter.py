@@ -185,7 +185,7 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if re.search(re.escape(named_params['pattern']), block.word):
+                if re.search((named_params['pattern']), block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
                                                                                           named_params[
@@ -204,7 +204,7 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if re.search(re.escape(named_params['pattern']), block.word):
+                if re.search((named_params['pattern']), block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
                                                                                           named_params[
@@ -223,7 +223,7 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if re.search(re.escape(named_params['pattern']), block.word):
+                if re.search((named_params['pattern']), block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
                                                                                           named_params[
@@ -242,7 +242,7 @@ def nearest_by_query(context: BlockSet, named_params: Dict) -> BlockSet:
         default = blocks[0]
         if len(blocks) != 0:
             for block in blocks:
-                if re.search(re.escape(named_params['pattern']), block.word):
+                if re.search((named_params['pattern']), block.word):
                     default = block
                     if euclidean(block.centre, named_params['anchor'].centre) < euclidean(default.centre,
                                                                                           named_params[

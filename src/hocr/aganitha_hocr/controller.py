@@ -13,7 +13,7 @@ import csv
 import time
 import pandas as pd
 import pathlib
-
+count_bad_files = 0
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
 
@@ -27,7 +27,6 @@ def main(filepath):
     dir_name = os.path.dirname(filepath)
     image_name = file.split('.hocr')[0]
     image_path = os.path.join(dir_name, image_name)
-
     for template in templates:
         try:
             extracted_values = template.execute(page.page_blockset)
@@ -35,6 +34,11 @@ def main(filepath):
             return file, extracted_values, template, image_path
         except Exception:
             logger.debug("Moving to new template")
+    f = open("demo.txt", "a")
+    f.write(file)
+    f.close()
+
+    return file, None, None, image_path
 
 
 def extract_MMS(filename, extracted_values, path_to_store, image_path):
@@ -54,6 +58,7 @@ def extract_MMS(filename, extracted_values, path_to_store, image_path):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     for i in range(len(extracted_values['Invoice Number'])):
         df['DATE'][i] = extracted_values["DATE"]
         df['CHECK NUMBER'][i] = extracted_values['CHECK NUMBER']
@@ -61,7 +66,8 @@ def extract_MMS(filename, extracted_values, path_to_store, image_path):
         df['Invoice Date'][i] = extracted_values['Invoice Date'][i]
         df['Invoice Number'][i] = extracted_values['Invoice Number'][i]
         df['Amount'][i] = extracted_values['Amount'][i]
-        df['LockBox'] = lockbox
+        df['LockBox'] = str(lockbox.split("b")[1])
+        df['Remittance Line Number'][i] = str(i + 1)
         df['Customer'][i] = extracted_values['Customer']
         df['Path to Image'] = image_path
     df = df.dropna()
@@ -83,6 +89,7 @@ def extract_GroupM(filename, extracted_values, path_to_store, image_path):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     for i in range(len(extracted_values["Invoice number"])):
         df["Check number"][i] = extracted_values["Check number"][0]
         df["Check date"][i] = extracted_values["Check date"][0]
@@ -91,9 +98,10 @@ def extract_GroupM(filename, extracted_values, path_to_store, image_path):
         df["Invoice number"][i] = extracted_values["Invoice number"][i]
         df["Period"][i] = extracted_values["Period"][i]
         df["Net Amount"][i] = extracted_values["Net Amount"][i]
+        df['Remittance Line Number'][i] = str(i+1)
         df['Customer'][i] = extracted_values['Customer']
         df['Path to Image'] = image_path
-        df['LockBox'] = lockbox
+        df['LockBox'] = str(lockbox.split("b")[1])
     df = df.dropna()
     df.to_csv(path_to_store + '/csv/GroupM/' + filename + 'output.csv', index=False)
 
@@ -113,6 +121,7 @@ def extract_OMG(filename, extracted_values, path_to_store, image_path):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     try:
         for i in range(len(extracted_values["Invoice Number"])):
             df["Date"][i] = extracted_values["Date"][0]
@@ -122,9 +131,10 @@ def extract_OMG(filename, extracted_values, path_to_store, image_path):
             df["Invoice Date"][i] = extracted_values["Invoice Date"][i]
             df["Gross Amount"][i] = extracted_values["Gross Amount"][i]
             df["Net Amount"][i] = extracted_values["Net Amount"][i]
+            df['Remittance Line Number'][i] = str(i + 1)
             df['Customer'][i] = extracted_values['Customer']
             df['Path to Image'] = image_path
-            df['LockBox'] = lockbox
+            df['LockBox'] = lockbox.split("b")[1]
         df = df.dropna()
         df.to_csv(path_to_store + '/csv/OMG/' + filename + 'output.csv', index=False)
     except IndexError:
@@ -146,6 +156,7 @@ def extract_Squared(filename, extracted_values, path_to_store, image_path):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     try:
         for i in range(len(extracted_values["Invoice Number"])):
             df["Date"][i] = extracted_values["Date"][0]
@@ -160,9 +171,10 @@ def extract_Squared(filename, extracted_values, path_to_store, image_path):
             df["Discount Total"][i] = extracted_values["Discount Total"][0]
             df["Net Total"][i] = extracted_values["Net Total"][0]
             df["Net Less Discount Total"][i] = extracted_values["Net Less Discount Total"][0]
+            df['Remittance Line Number'][i] = str(i + 1)
             df['Customer'][i] = extracted_values['Customer']
             df['Path to Image'] = image_path
-            df['LockBox'] = lockbox
+            df['LockBox'] = str(lockbox.split("b")[1])
 
         df = df.dropna()
         df.to_csv(path_to_store + '/csv/22Squared/' + filename + 'output.csv', index=False)
@@ -184,6 +196,7 @@ def extract_Katz(filename, extracted_values, path_to_store, image_path):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     try:
         for i in range(len(extracted_values["Stn-Invoice"])):
             df["Stn-Invoice"][i] = extracted_values["Stn-Invoice"][i]
@@ -191,9 +204,13 @@ def extract_Katz(filename, extracted_values, path_to_store, image_path):
             df["Grs-Order"][i] = extracted_values["Grs-Order"][i]
             df["Grs-Billed"][i] = extracted_values["Grs-Billed"][i]
             df["Paid Amount"][i] = extracted_values["Paid Amount"][i]
+            df["Check Number"][i] = extracted_values["Check Number"]
+            df["Check Date"][i] = extracted_values["Check Date"]
+            df["Total"][i] = extracted_values["Total"]
+            df['Remittance Line Number'][i] = str(i + 1)
             df['Customer'][i] = extracted_values['Customer']
             df['Path to Image'] = image_path
-            df['LockBox'] = lockbox
+            df['LockBox'] = str(lockbox.split("b")[1])
         df = df.dropna()
         df.to_csv(path_to_store + '/csv/Katz/' + filename + 'output.csv',
                   index=False)
@@ -217,6 +234,7 @@ def extract_IPG(filename, extracted_values, path_to_store, image_path):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     try:
         for i in range(len(extracted_values["Invoice Number"])):
             df["Date"][i] = extracted_values["Date"][0]
@@ -226,9 +244,10 @@ def extract_IPG(filename, extracted_values, path_to_store, image_path):
             df["Invoice Period"][i] = extracted_values["Invoice Period"][i]
             df["Net Amount"][i] = extracted_values["Net Amount"][i]
             df["Check Total"][i] = extracted_values["Check Total"][0]
+            df['Remittance Line Number'][i] = str(i + 1)
             df['Customer'][i] = extracted_values['Customer']
             df['Path to Image'] = image_path
-            df['LockBox'] = lockbox
+            df['LockBox'] = str(lockbox.split("b")[1])
 
         df = df.dropna()
         if len(df) > 0:
@@ -267,8 +286,10 @@ def extract_data(filename, template, extracted_params, store_path, image):
 
 
 if __name__ == "__main__":
-    file, extracted_params, temp, image = main(
-        filepath='/Users/adarsh/work/ar-automation/new_data/MMS/09.28.20-lb83293-1-16-addl-doc-01.jpg.hocr.hocrjs.html')
+    filenames = ['/Users/adarsh/work/ar-automation/new_data/Katz/08.17.20-lb83192-1-22-addl-doc-01.jpg.hocr.hocrjs.html']
+    for file in filenames:
+        file, extracted_params, temp, image = main(filepath=file)
 
-    store_path = '/Users/adarsh/work/ar-automation/test2'
-    extract_data(file, temp, extracted_params, store_path, image)
+        store_path = '/Users/adarsh/work/ar-automation/katz_test'
+        extract_data(file, temp, extracted_params, store_path, image)
+

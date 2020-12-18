@@ -10,7 +10,9 @@
 *.rar
 *.tar
 *.zip
-
+*.csv
+katz_test/
+test3/
 # Logs and databases #
 ######################
 *.log
