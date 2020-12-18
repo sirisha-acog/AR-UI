@@ -187,7 +187,7 @@ class BottomLeftInvoiceDateMatcher(Matcher):
 
 
 class BottomInvoiceGrossAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         gross_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_gross_blockset = get_blockset_by_anchor_axis(context,
                                                            named_params={"anchor": gross_blockset.get_synthetic_block(),
@@ -207,12 +207,12 @@ class BottomInvoiceGrossAmountMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
 class BottomRightDiscountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         discount_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_discount_blockset = get_blockset_by_anchor_axis(context,
                                                               named_params={
@@ -238,12 +238,12 @@ class BottomRightDiscountMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
 class BottomRightNetAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         net_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_net_blockset = get_blockset_by_anchor_axis(context,
                                                          named_params={
@@ -258,7 +258,7 @@ class BottomRightNetAmountMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
@@ -367,7 +367,7 @@ class OMG(Extractor):
 
         # Gross Amount
         gross_amount = BottomInvoiceGrossAmountMatcher(anchor='Gross',
-                                                       pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
+                                                       pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
             self.gross_amount)
         extracted_params.update({"Gross Amount": gross_amount})
 
@@ -379,7 +379,7 @@ class OMG(Extractor):
 
         # Net Amount
         net_amount = BottomRightNetAmountMatcher(anchor='Net',
-                                                 pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])$').match_rule(
+                                                 pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])$').match_rule(
             self.net_amount)
         extracted_params.update({"Net Amount": net_amount})
         logger.debug("Extracted Params : %r", extracted_params)

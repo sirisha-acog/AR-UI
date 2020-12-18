@@ -155,7 +155,7 @@ class TopRightCheckDateMatcher(Matcher):
 
 
 class TopRightCheckAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         check_amount_blockset = nearest_by_query(context, named_params={"anchor": anchor_blockset.get_synthetic_block(),
                                                                         'pattern': self.pattern,
@@ -165,11 +165,11 @@ class TopRightCheckAmountMatcher(Matcher):
             logger.debug("Check amount Does Not Match pattern!!")
             raise Exception
 
-        return [check_amount_blockset.blocks[0].word.replace(" ", "")]
+        return [float(check_amount_blockset.blocks[0].word.replace(" ", ""))]
 
 
 class BotTotalAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         dollar_blockset = nearest_by_query(context, named_params={'anchor': anchor_blockset.get_synthetic_block(),
                                                                   'pattern': '^\$', 'axis': 'right'})
@@ -179,7 +179,7 @@ class BotTotalAmountMatcher(Matcher):
         if not re.match(self.pattern, total_amount_blockset.blocks[0].word.replace(" ", "")):
             logger.debug("Total amount Does Not Match pattern!!")
             raise Exception
-        return [total_amount_blockset.blocks[0].word.replace(" ", "")]
+        return [float(total_amount_blockset.blocks[0].word.replace(" ", ""))]
 
 
 class LeftInvoiceNumberMatcher(Matcher):
@@ -219,7 +219,7 @@ class BotMediaClientMatcher(Matcher):
 
 
 class RightNetAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         amount_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
         amount_blockset_context = get_blockset_by_anchor_axis(context, named_params={
             "anchor": amount_blockset.get_synthetic_block(),
@@ -238,7 +238,7 @@ class RightNetAmountMatcher(Matcher):
         temp = []
         for block in new_blockset.blocks:
             if re.search(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
@@ -353,7 +353,7 @@ class GroupM(Extractor):
 
         # match and extract check-amount
         check_amount = TopRightCheckAmountMatcher(anchor="$",
-                                                  pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                                  pattern=r'^\$?([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.check_amount_blockset)
         # transforming check amount to float
         extracted_params.update({"Check amount": check_amount})
@@ -361,7 +361,7 @@ class GroupM(Extractor):
 
         # match and extract total-amount
         total_amount = BotTotalAmountMatcher(anchor="TOTAL",
-                                             pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                             pattern=r'^\$?([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.total_blockset)
         # transforming total amount to float
         extracted_params["Total amount"] = total_amount
@@ -383,7 +383,7 @@ class GroupM(Extractor):
 
         # match and extract net amount
         net_amount = RightNetAmountMatcher(anchor="Amount",
-                                           pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
+                                           pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
             self.net_amount_blockset)
         # net_amount = float(net_amount.replace('$', '').replace(',', ''))  # transforming net amount to float
         extracted_params["Net Amount"] = net_amount

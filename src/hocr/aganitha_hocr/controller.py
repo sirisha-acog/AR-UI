@@ -34,9 +34,6 @@ def main(filepath):
             return file, extracted_values, template, image_path
         except Exception:
             logger.debug("Moving to new template")
-    f = open("demo.txt", "a")
-    f.write(file)
-    f.close()
 
     return file, None, None, image_path
 
@@ -259,7 +256,9 @@ def extract_IPG(filename, extracted_values, path_to_store, image_path):
 def extract_data(filename, template, extracted_params, store_path, image):
     if extracted_params is None:
         print("No templates matched.")
-        print("Added " + " to excluded templates")
+        print("Added " + filename + " to excluded templates")
+        with open('exception_files.txt', 'a') as e_file:
+            e_file.write(filename + "\n")
     if isinstance(template, MMS):
         logger.debug("Inside MMS")
         extract_MMS(filename=filename, extracted_values=extracted_params, path_to_store=store_path, image_path=image)
@@ -286,10 +285,10 @@ def extract_data(filename, template, extracted_params, store_path, image):
 
 
 if __name__ == "__main__":
-    filenames = ['/Users/adarsh/work/ar-automation/new_data/Katz/08.17.20-lb83192-1-22-addl-doc-01.jpg.hocr.hocrjs.html']
+    filenames = ['/Users/adarsh/work/ar-automation/new_data/IPG/07.06.20-lb83199-1-19-addl-doc-01.jpg.hocr.hocrjs.html']
     for file in filenames:
         file, extracted_params, temp, image = main(filepath=file)
 
-        store_path = '/Users/adarsh/work/ar-automation/katz_test'
+        store_path = '/Users/adarsh/work/ar-automation/test2'
         extract_data(file, temp, extracted_params, store_path, image)
 

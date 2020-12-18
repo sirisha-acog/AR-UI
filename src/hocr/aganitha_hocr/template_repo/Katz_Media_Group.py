@@ -210,7 +210,7 @@ class TopLeftVoucherMatcher(Matcher):
 
 
 class TopLeftGrsOrderMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         order_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_order_blockset = get_blockset_by_anchor_axis(context,
                                                            named_params={"anchor": order_blockset.get_synthetic_block(),
@@ -234,12 +234,12 @@ class TopLeftGrsOrderMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
 class TopLeftGrsBilledMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         billed_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_billed_blockset = get_blockset_by_anchor_axis(context, named_params={
             "anchor": billed_blockset.get_synthetic_block(),
@@ -263,12 +263,12 @@ class TopLeftGrsBilledMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
 class TopRightPaidAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         amount_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_amount_blockset = get_blockset_by_anchor_axis(context, named_params={
             "anchor": amount_blockset.get_synthetic_block(),
@@ -281,7 +281,7 @@ class TopRightPaidAmountMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
@@ -312,7 +312,7 @@ class BottomCheckDateMatcher(Matcher):
 
 
 class BottomTotalAmountPaidMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         amount_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_amount_blockset = get_blockset_by_anchor_axis(context,
                                                             named_params={
@@ -326,7 +326,7 @@ class BottomTotalAmountPaidMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
@@ -455,13 +455,13 @@ class Katz(Extractor):
 
         # Grs- Order Extraction
         grs_order = TopLeftGrsOrderMatcher(anchor='Order',
-                                           pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                           pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.grs_order)
         extracted_params['Grs-Order'] = grs_order
 
         # Grs Billed Matcher
         grs_billed = TopLeftGrsBilledMatcher(anchor='Billed',
-                                             pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                             pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.grs_billed)
         extracted_params['Grs-Billed'] = grs_billed
 
@@ -483,7 +483,7 @@ class Katz(Extractor):
 
         # Total Amount Paid
         total = BottomTotalAmountPaidMatcher(anchor='Total',
-                                             pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                             pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.total_amount_paid)
         extracted_params["Total"] = total[0]
         extracted_params["Customer"] = "Katz"
