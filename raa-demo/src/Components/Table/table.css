@@ -1,0 +1,12 @@
+.tabulator .tabulator-header {
+  /* white-space: normal; */
+  font-size: small;
+  text-align: center;
+}
+.tabulator-cell{
+  font-size: small;
+  font-weight: 500;
+}
+a:hover {
+  text-decoration: None;
+}
