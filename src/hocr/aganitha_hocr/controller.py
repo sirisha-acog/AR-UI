@@ -13,9 +13,10 @@ import csv
 import time
 import pandas as pd
 import pathlib
-
+count_bad_files = 0
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
+
 
 def main(filepath):
     # filepath = '/Users/adarsh/test_vaccine.jpg.json.hocr.hocrjs.html'
@@ -23,23 +24,27 @@ def main(filepath):
     templates = [MMS(), GroupM(), OMG(), Squared(), IPG(), Katz()]
     extracted_values = None
     file = os.path.basename(filepath)
+    dir_name = os.path.dirname(filepath)
+    image_name = file.split('.hocr')[0]
+    image_path = os.path.join(dir_name, image_name)
     for template in templates:
         try:
             extracted_values = template.execute(page.page_blockset)
             # print(extracted_values)
-            return file, extracted_values, template
+            return file, extracted_values, template, image_path
         except Exception:
             logger.debug("Moving to new template")
 
-
-def batch_processing(path):
-    pass
+    return file, None, None, image_path
 
 
-def extract_MMS(filename, extracted_values, path_to_store):
+def extract_MMS(filename, extracted_values, path_to_store, image_path):
     # Create Paths if they don't exist
     pathlib.Path(path_to_store + '/json/MMS/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(path_to_store + '/csv/MMS/').mkdir(parents=True, exist_ok=True)
+    # Test Code
+    lockbox = filename.split('-')[1]
+
     # Dump Into JSON
     with open(path_to_store + '/json/MMS/' + filename + 'output.json', 'w') as json_file:
         logger.debug("Dumping into JSON")
@@ -50,6 +55,7 @@ def extract_MMS(filename, extracted_values, path_to_store):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     for i in range(len(extracted_values['Invoice Number'])):
         df['DATE'][i] = extracted_values["DATE"]
         df['CHECK NUMBER'][i] = extracted_values['CHECK NUMBER']
@@ -57,15 +63,19 @@ def extract_MMS(filename, extracted_values, path_to_store):
         df['Invoice Date'][i] = extracted_values['Invoice Date'][i]
         df['Invoice Number'][i] = extracted_values['Invoice Number'][i]
         df['Amount'][i] = extracted_values['Amount'][i]
+        df['LockBox'] = str(lockbox.split("b")[1])
+        df['Remittance Line Number'][i] = str(i + 1)
+        df['Customer'][i] = extracted_values['Customer']
+        df['Path to Image'] = image_path
     df = df.dropna()
     df.to_csv(path_to_store + '/csv/MMS/' + filename + 'output.csv', index=False)
 
 
-def extract_GroupM(filename, extracted_values, path_to_store):
+def extract_GroupM(filename, extracted_values, path_to_store, image_path):
     # Create Paths if they don't exist
     pathlib.Path(path_to_store + '/json/GroupM/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(path_to_store + '/csv/GroupM/').mkdir(parents=True, exist_ok=True)
-
+    lockbox = filename.split('-')[1]
     # Dump Into JSON
     with open(path_to_store + '/json/GroupM/' + filename + 'output.json', 'w') as json_file:
         logger.debug("Dumping into JSON")
@@ -76,6 +86,7 @@ def extract_GroupM(filename, extracted_values, path_to_store):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     for i in range(len(extracted_values["Invoice number"])):
         df["Check number"][i] = extracted_values["Check number"][0]
         df["Check date"][i] = extracted_values["Check date"][0]
@@ -84,15 +95,19 @@ def extract_GroupM(filename, extracted_values, path_to_store):
         df["Invoice number"][i] = extracted_values["Invoice number"][i]
         df["Period"][i] = extracted_values["Period"][i]
         df["Net Amount"][i] = extracted_values["Net Amount"][i]
+        df['Remittance Line Number'][i] = str(i+1)
+        df['Customer'][i] = extracted_values['Customer']
+        df['Path to Image'] = image_path
+        df['LockBox'] = str(lockbox.split("b")[1])
     df = df.dropna()
     df.to_csv(path_to_store + '/csv/GroupM/' + filename + 'output.csv', index=False)
 
 
-def extract_OMG(filename, extracted_values, path_to_store):
+def extract_OMG(filename, extracted_values, path_to_store, image_path):
     # Create Paths if they don't exist
     pathlib.Path(path_to_store + '/json/OMG/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(path_to_store + '/csv/OMG/').mkdir(parents=True, exist_ok=True)
-
+    lockbox = filename.split('-')[1]
     # Dump into JSON
     with open(path_to_store + '/json/OMG/' + filename + 'output.json', 'w') as json_file:
         logger.debug("Dumping into JSON")
@@ -103,6 +118,7 @@ def extract_OMG(filename, extracted_values, path_to_store):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     try:
         for i in range(len(extracted_values["Invoice Number"])):
             df["Date"][i] = extracted_values["Date"][0]
@@ -112,17 +128,21 @@ def extract_OMG(filename, extracted_values, path_to_store):
             df["Invoice Date"][i] = extracted_values["Invoice Date"][i]
             df["Gross Amount"][i] = extracted_values["Gross Amount"][i]
             df["Net Amount"][i] = extracted_values["Net Amount"][i]
+            df['Remittance Line Number'][i] = str(i + 1)
+            df['Customer'][i] = extracted_values['Customer']
+            df['Path to Image'] = image_path
+            df['LockBox'] = lockbox.split("b")[1]
         df = df.dropna()
         df.to_csv(path_to_store + '/csv/OMG/' + filename + 'output.csv', index=False)
     except IndexError:
         print("INDEXERROR:Removing file ", filename)
 
 
-def extract_Squared(filename, extracted_values, path_to_store):
+def extract_Squared(filename, extracted_values, path_to_store, image_path):
     # Create Paths if they don't exist
     pathlib.Path(path_to_store + '/json/22Squared/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(path_to_store + '/csv/22Squared/').mkdir(parents=True, exist_ok=True)
-
+    lockbox = filename.split('-')[1]
     # Dump into JSON
     with open(path_to_store + '/json/22Squared/' + filename + 'output.json', 'w') as json_file:
         logger.debug("Dumping into JSON")
@@ -133,6 +153,7 @@ def extract_Squared(filename, extracted_values, path_to_store):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     try:
         for i in range(len(extracted_values["Invoice Number"])):
             df["Date"][i] = extracted_values["Date"][0]
@@ -147,6 +168,10 @@ def extract_Squared(filename, extracted_values, path_to_store):
             df["Discount Total"][i] = extracted_values["Discount Total"][0]
             df["Net Total"][i] = extracted_values["Net Total"][0]
             df["Net Less Discount Total"][i] = extracted_values["Net Less Discount Total"][0]
+            df['Remittance Line Number'][i] = str(i + 1)
+            df['Customer'][i] = extracted_values['Customer']
+            df['Path to Image'] = image_path
+            df['LockBox'] = str(lockbox.split("b")[1])
 
         df = df.dropna()
         df.to_csv(path_to_store + '/csv/22Squared/' + filename + 'output.csv', index=False)
@@ -154,11 +179,11 @@ def extract_Squared(filename, extracted_values, path_to_store):
         print("INDEXERROR:Removing file ", filename)
 
 
-def extract_Katz(filename, extracted_values, path_to_store):
+def extract_Katz(filename, extracted_values, path_to_store, image_path):
     # Create Paths if they don't exist
     pathlib.Path(path_to_store + '/json/Katz/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(path_to_store + '/csv/Katz/').mkdir(parents=True, exist_ok=True)
-
+    lockbox = filename.split('-')[1]
     # Dump to JSON
     with open(path_to_store + '/json/Katz/' + filename + 'output.json', 'w') as json_file:
         logger.debug("Dumping into JSON")
@@ -168,6 +193,7 @@ def extract_Katz(filename, extracted_values, path_to_store):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     try:
         for i in range(len(extracted_values["Stn-Invoice"])):
             df["Stn-Invoice"][i] = extracted_values["Stn-Invoice"][i]
@@ -175,6 +201,13 @@ def extract_Katz(filename, extracted_values, path_to_store):
             df["Grs-Order"][i] = extracted_values["Grs-Order"][i]
             df["Grs-Billed"][i] = extracted_values["Grs-Billed"][i]
             df["Paid Amount"][i] = extracted_values["Paid Amount"][i]
+            df["Check Number"][i] = extracted_values["Check Number"]
+            df["Check Date"][i] = extracted_values["Check Date"]
+            df["Total"][i] = extracted_values["Total"]
+            df['Remittance Line Number'][i] = str(i + 1)
+            df['Customer'][i] = extracted_values['Customer']
+            df['Path to Image'] = image_path
+            df['LockBox'] = str(lockbox.split("b")[1])
         df = df.dropna()
         df.to_csv(path_to_store + '/csv/Katz/' + filename + 'output.csv',
                   index=False)
@@ -183,11 +216,11 @@ def extract_Katz(filename, extracted_values, path_to_store):
         print("INDEXERROR:Removing file ", filename)
 
 
-def extract_IPG(filename, extracted_values, path_to_store):
+def extract_IPG(filename, extracted_values, path_to_store, image_path):
     # Create Paths if they don't exist
     pathlib.Path(path_to_store + '/json/IPG/').mkdir(parents=True, exist_ok=True)
     pathlib.Path(path_to_store + '/csv/IPG/').mkdir(parents=True, exist_ok=True)
-
+    lockbox = filename.split('-')[1]
     # Dump into JSON
     with open(path_to_store + '/json/IPG/' + filename + 'output.json', 'w') as json_file:
         logger.debug("Dumping into JSON")
@@ -198,6 +231,7 @@ def extract_IPG(filename, extracted_values, path_to_store):
     for key, value in extracted_values.items():
         keys.append(key)
     df = pd.DataFrame(index=range(100), columns=keys)
+    df["Remittance Line Number"] = None
     try:
         for i in range(len(extracted_values["Invoice Number"])):
             df["Date"][i] = extracted_values["Date"][0]
@@ -207,6 +241,10 @@ def extract_IPG(filename, extracted_values, path_to_store):
             df["Invoice Period"][i] = extracted_values["Invoice Period"][i]
             df["Net Amount"][i] = extracted_values["Net Amount"][i]
             df["Check Total"][i] = extracted_values["Check Total"][0]
+            df['Remittance Line Number'][i] = str(i + 1)
+            df['Customer'][i] = extracted_values['Customer']
+            df['Path to Image'] = image_path
+            df['LockBox'] = str(lockbox.split("b")[1])
 
         df = df.dropna()
         if len(df) > 0:
@@ -215,38 +253,42 @@ def extract_IPG(filename, extracted_values, path_to_store):
         print("Index Error")
 
 
-def extract_data(filename, template, extracted_params, store_path):
+def extract_data(filename, template, extracted_params, store_path, image):
     if extracted_params is None:
         print("No templates matched.")
-        print("Added " + " to excluded templates")
+        print("Added " + filename + " to excluded templates")
+        with open('exception_files.txt', 'a') as e_file:
+            e_file.write(filename + "\n")
     if isinstance(template, MMS):
         logger.debug("Inside MMS")
-        extract_MMS(filename=filename, extracted_values=extracted_params, path_to_store=store_path)
+        extract_MMS(filename=filename, extracted_values=extracted_params, path_to_store=store_path, image_path=image)
 
     elif isinstance(template, GroupM):
         logger.debug("Inside GroupM")
-        extract_GroupM(filename=filename, extracted_values=extracted_params, path_to_store=store_path)
+        extract_GroupM(filename=filename, extracted_values=extracted_params, path_to_store=store_path, image_path=image)
 
     elif isinstance(template, OMG):
         logger.debug("Inside OMG")
-        extract_OMG(filename=filename, extracted_values=extracted_params, path_to_store=store_path)
+        extract_OMG(filename=filename, extracted_values=extracted_params, path_to_store=store_path, image_path=image)
 
     elif isinstance(template, IPG):
         logger.debug("Inside IPG")
-        extract_IPG(filename=filename, extracted_values=extracted_params, path_to_store=store_path)
+        extract_IPG(filename=filename, extracted_values=extracted_params, path_to_store=store_path, image_path=image)
 
     elif isinstance(template, Squared):
         logger.debug("Inside 22Squared")
-        extract_Squared(filename=filename, extracted_values=extracted_params, path_to_store=store_path)
+        extract_Squared(filename=filename, extracted_values=extracted_params, path_to_store=store_path, image_path=image)
 
     elif isinstance(template, Katz):
         logger.debug("Inside Katz")
-        extract_Katz(filename=filename, extracted_values=extracted_params, path_to_store=store_path)
+        extract_Katz(filename=filename, extracted_values=extracted_params, path_to_store=store_path, image_path=image)
 
 
 if __name__ == "__main__":
-    file, extracted_params, temp = main(
-        filepath='/Users/adarsh/work/ar-automation/new_data/MMS/07.07.20-lb83143-1-2-addl-doc-01.jpg.hocr.hocrjs.html')
+    filenames = ['/Users/adarsh/work/ar-automation/new_data/IPG/07.06.20-lb83199-1-19-addl-doc-01.jpg.hocr.hocrjs.html']
+    for file in filenames:
+        file, extracted_params, temp, image = main(filepath=file)
 
-    store_path = '/Users/adarsh/work/ar-automation/test2'
-    extract_data(file,temp, extracted_params, store_path)
+        store_path = '/Users/adarsh/work/ar-automation/test2'
+        extract_data(file, temp, extracted_params, store_path, image)
+

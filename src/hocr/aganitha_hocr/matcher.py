@@ -8,5 +8,5 @@ class Matcher(object):
         self.anchor = anchor
         self.pattern = pattern
 
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         pass

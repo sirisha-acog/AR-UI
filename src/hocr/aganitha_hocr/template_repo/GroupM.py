@@ -155,7 +155,7 @@ class TopRightCheckDateMatcher(Matcher):
 
 
 class TopRightCheckAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "phrase"})
         check_amount_blockset = nearest_by_query(context, named_params={"anchor": anchor_blockset.get_synthetic_block(),
                                                                         'pattern': self.pattern,
@@ -165,11 +165,11 @@ class TopRightCheckAmountMatcher(Matcher):
             logger.debug("Check amount Does Not Match pattern!!")
             raise Exception
 
-        return [check_amount_blockset.blocks[0].word.replace(" ", "")]
+        return [float(check_amount_blockset.blocks[0].word.replace(" ", ""))]
 
 
 class BotTotalAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         anchor_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         dollar_blockset = nearest_by_query(context, named_params={'anchor': anchor_blockset.get_synthetic_block(),
                                                                   'pattern': '^\$', 'axis': 'right'})
@@ -179,7 +179,7 @@ class BotTotalAmountMatcher(Matcher):
         if not re.match(self.pattern, total_amount_blockset.blocks[0].word.replace(" ", "")):
             logger.debug("Total amount Does Not Match pattern!!")
             raise Exception
-        return [total_amount_blockset.blocks[0].word.replace(" ", "")]
+        return [float(total_amount_blockset.blocks[0].word.replace(" ", ""))]
 
 
 class LeftInvoiceNumberMatcher(Matcher):
@@ -219,7 +219,7 @@ class BotMediaClientMatcher(Matcher):
 
 
 class RightNetAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         amount_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
         amount_blockset_context = get_blockset_by_anchor_axis(context, named_params={
             "anchor": amount_blockset.get_synthetic_block(),
@@ -238,7 +238,7 @@ class RightNetAmountMatcher(Matcher):
         temp = []
         for block in new_blockset.blocks:
             if re.search(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
@@ -261,13 +261,13 @@ class GroupM(Extractor):
         status_list: List = []
 
         # customer-name match
-        customer_name_context = left(top(context, named_params={"argument": 30}), named_params={"argument": 40})
-        customer_name_1_status = TopLeftCustomerNameChecker(anchor="WAVEMAKER").check(customer_name_context)
-        customer_name_2_status = TopLeftCustomerNameChecker(anchor="GROUPM").check(customer_name_context)
-        if customer_name_1_status or customer_name_2_status:  # append customer name status to overall status lit
-            status_list.append(True)
-        else:
-            status_list.append(False)
+        # customer_name_context = left(top(context, named_params={"argument": 30}), named_params={"argument": 40})
+        # customer_name_1_status = TopLeftCustomerNameChecker(anchor="WAVEMAKER").check(customer_name_context)
+        # customer_name_2_status = TopLeftCustomerNameChecker(anchor="GROUPM").check(customer_name_context)
+        # if customer_name_1_status or customer_name_2_status:  # append customer name status to overall status lit
+        #     status_list.append(True)
+        # else:
+        #     status_list.append(False)
 
         # check-number match
         check_number_context = right(top(context, named_params={"argument": 40}), named_params={"argument": 50})
@@ -335,49 +335,46 @@ class GroupM(Extractor):
 
         status_list.append(net_amount_status)
 
-        logger.debug('Results of all predicates: %r', status_list)
-        if all(status_list):
-            return True
-        else:
-            return False
+        # print('Results of all predicates:', status_list)
+        return all(status_list)
 
-    def extract(self, context: BlockSet) -> Dict[str, Any]:
+    def extract(self, context: BlockSet) -> Dict:
         extracted_params = {}
-
         # match and extract check-number
-        check_number = TopRightCheckNumberMatcher(anchor="No.", pattern=r'\d{10}').match_rule(
+        check_number = TopRightCheckNumberMatcher(anchor="No.", pattern=r'^\d{10}$').match_rule(
             self.check_number_blockset)
         # print(check_number) # transforming check number to integer
-        extracted_params.update({"Check number": check_number})
+        extracted_params["Check number"] = check_number
 
         # match and extract check-date
         check_date = TopRightCheckDateMatcher(anchor="Date", pattern=r'\d{2}\/\d{2}\/\d{4}').match_rule(
             self.check_date_blockset)
-        extracted_params.update({"Check date": check_date})
+        extracted_params["Check date"] = check_date
 
         # match and extract check-amount
         check_amount = TopRightCheckAmountMatcher(anchor="$",
-                                                  pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                                  pattern=r'^\$?([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.check_amount_blockset)
         # transforming check amount to float
         extracted_params.update({"Check amount": check_amount})
+        extracted_params["Check amount"] = check_amount
 
         # match and extract total-amount
         total_amount = BotTotalAmountMatcher(anchor="TOTAL",
-                                             pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                             pattern=r'^\$?([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.total_blockset)
         # transforming total amount to float
-        extracted_params.update({"Total amount": total_amount})
+        extracted_params["Total amount"] = total_amount
 
         # match and extract invoice-number
         invoice_number = LeftInvoiceNumberMatcher(anchor="Invoice", pattern=r'\d{6}[-\d]{1}[\d\w]+').match_rule(
             self.invoice_number_blockset)
-        extracted_params.update({"Invoice number": invoice_number})
+        extracted_params["Invoice number"] = invoice_number
 
         # match and extract period
         period = LeftPeriodMatcher(anchor="Period", pattern=r'\d{2}\/\d{2}\/\d{4}').match_rule(
             self.period_blockset)
-        extracted_params.update({"Period": period})
+        extracted_params["Period"] = period
 
         # match and extract media-client
         # TODO Try to fix this method
@@ -386,9 +383,9 @@ class GroupM(Extractor):
 
         # match and extract net amount
         net_amount = RightNetAmountMatcher(anchor="Amount",
-                                           pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
+                                           pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?').match_rule(
             self.net_amount_blockset)
         # net_amount = float(net_amount.replace('$', '').replace(',', ''))  # transforming net amount to float
-        extracted_params.update({"Net Amount": net_amount})
-
+        extracted_params["Net Amount"] = net_amount
+        extracted_params["Customer"] = "GroupM"
         return extracted_params

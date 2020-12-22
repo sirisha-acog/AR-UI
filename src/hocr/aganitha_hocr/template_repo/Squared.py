@@ -204,7 +204,7 @@ class TopLeftInvoiceNumberMatcher(Matcher):
 
 
 class TopRightGrossAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         gross_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_gross_blockset = get_blockset_by_anchor_axis(context,
                                                            named_params={"anchor": gross_blockset.get_synthetic_block(),
@@ -218,12 +218,12 @@ class TopRightGrossAmountMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
 class TopRightDiscountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         discount_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
         below_discount_blockset = get_blockset_by_anchor_axis(context, named_params={
             "anchor": discount_blockset.get_synthetic_block(), 'axis': 'bot'})
@@ -241,12 +241,12 @@ class TopRightDiscountMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
 class TopRightNetMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         net_blockset = get_text(context, named_params={"query": self.anchor, "level": "word"})
         below_net_blockset = get_blockset_by_anchor_axis(context,
                                                          named_params={"anchor": net_blockset.get_synthetic_block(),
@@ -264,12 +264,12 @@ class TopRightNetMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
 class TopRightNetLessDiscMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         less_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
         below_less_blockset = get_blockset_by_anchor_axis(context, named_params={
             "anchor": less_blockset.get_synthetic_block(), 'axis': 'bot'})
@@ -282,20 +282,20 @@ class TopRightNetLessDiscMatcher(Matcher):
         temp = []
         for block in new_blockset:
             if re.match(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
 class BotCheckTotalMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         total_blockset = get_text(context, named_params={'query': self.anchor, "level": "word"})
         colon = nearest(context, named_params={'anchor': total_blockset.get_synthetic_block(), 'axis': 'right'})
         gross_amount = nearest(context, named_params={'anchor': colon.get_synthetic_block(), 'axis': 'right'})
         discount_amount = nearest(context, named_params={'anchor': gross_amount.get_synthetic_block(), 'axis': 'right'})
         net_amount = nearest(context, named_params={'anchor': discount_amount.get_synthetic_block(), 'axis': 'right'})
         net_less_discount = nearest(context, named_params={'anchor': net_amount.get_synthetic_block(), 'axis': 'right'})
-        return [gross_amount.blocks[0].word.replace(" ", ""), discount_amount.blocks[0].word.replace(" ", ""), net_amount.blocks[0].word.replace(" ", ""),
-                net_less_discount.blocks[0].word.replace(" ", "")]
+        return [float(gross_amount.blocks[0].word.replace(" ", "")), float(discount_amount.blocks[0].word.replace(" ", "")), float(net_amount.blocks[0].word.replace(" ", "")),
+                float(net_less_discount.blocks[0].word.replace(" ", ""))]
 
 
 # 22Squared Extractor
@@ -414,25 +414,25 @@ class Squared(Extractor):
 
         # Gross Amount
         gross_amount = TopRightGrossAmountMatcher(anchor='Gross',
-                                                  pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                                  pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.gross)
         extracted_params["Gross Amount"] = gross_amount
 
         # Discount
         discount = TopRightDiscountMatcher(anchor='Discount',
-                                           pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                           pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.discount)
         extracted_params["Discount"] = discount
 
         # Net
         net = TopRightNetMatcher(anchor='Net',
-                                 pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                 pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.net)
         extracted_params["Net"] = net
 
         # Net Less Discount
         net_less_disc = TopRightNetLessDiscMatcher(anchor='Less',
-                                                   pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                                   pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.net_Less_discount)
         extracted_params["Net Less Discount"] = net_less_disc
 
@@ -444,5 +444,5 @@ class Squared(Extractor):
         extracted_params["Discount Total"] = [check_total[1]]
         extracted_params["Net Total"] = [check_total[2]]
         extracted_params["Net Less Discount Total"] = [check_total[3]]
-
+        extracted_params["Customer"] = "22Squared"
         return extracted_params

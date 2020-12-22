@@ -145,7 +145,7 @@ class TopRightAmountMatcher(Matcher):
                                                     'axis': "right"})
             logger.debug("Amount: %r", amount.blocks[0].word)
             if re.match(self.pattern, amount.blocks[0].word.replace(" ", "")):
-                return amount.blocks[0].word.replace(" ", "")
+                return float(amount.blocks[0].word.replace(" ", ""))
 
 
 class BottomLeftInvoiceDateMatcher(Matcher):
@@ -168,7 +168,7 @@ class BottomLeftInvoiceNumberMatcher(Matcher):
 
 
 class BottomRightAmountMatcher(Matcher):
-    def match_rule(self, context: BlockSet) -> List[str]:
+    def match_rule(self, context: BlockSet) -> List[Any]:
         amount_blockset = get_text(context=context, named_params={'query': self.anchor, 'level': "word"})
         amount_blockset = amount_blockset.get_synthetic_blockset()
         amount_blockset_context = get_blockset_by_anchor_axis(context=context,
@@ -183,7 +183,7 @@ class BottomRightAmountMatcher(Matcher):
         temp = []
         for block in amount_column_context.blocks:
             if re.search(self.pattern, block.word.replace(" ", "")):
-                temp.append(block.word.replace(" ", ""))
+                temp.append(float(block.word.replace(" ", "")))
         return temp
 
 
@@ -258,7 +258,7 @@ class MMS(Extractor):
         extracted_params["CHECK NUMBER"] = check_num
         # Match and Extract Amount Paid
         amount = TopRightAmountMatcher(anchor="$",
-                                       pattern=r'^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                       pattern=r'^\$?([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.amount_paid)
         extracted_params["AMOUNT PAID"] = amount
         # Match Invoice Date
@@ -272,7 +272,8 @@ class MMS(Extractor):
         extracted_params["Invoice Number"] = inv_num
         # Match Amount in table
         amount_in_table = BottomRightAmountMatcher(anchor="Amount",
-                                                   pattern=r'^([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
+                                                   pattern=r'^([-+]?[0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(.[0-9][0-9])?$').match_rule(
             self.amount)
         extracted_params["Amount"] = amount_in_table
+        extracted_params["Customer"] = "MMS"
         return extracted_params
