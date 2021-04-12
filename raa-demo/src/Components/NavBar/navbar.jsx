@@ -15,7 +15,7 @@ export default function AcogNavBar(props) {
                             className="d-inline-block align-top"
                         /></a>{' '}
     </Navbar.Brand>
-    <Navbar.Text id="title"> <a href="/" style={{textDecoration: 'None'}}> Remmitance Advice Automation </a></Navbar.Text>
+    <Navbar.Text id="title"> <a href="/" style={{textDecoration: 'None'}}> Remittance Advice Automation </a></Navbar.Text>
     <Navbar.Collapse className="justify-content-end">
     <Navbar.Text>
     <a href="#login"><svg xmlns="http://www.w3.org/2000/svg" width="50" height="30" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">

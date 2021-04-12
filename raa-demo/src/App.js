@@ -16,7 +16,7 @@ function App() {
   return (
       <Router>
         <Switch>
-          <Route path="/home" render={()=> <Fragment><AcogNavBar title="Remmitance Advice Automation" /><div style={{padding:20}}><CustomTable data={data} title="Remittance" enableclick={true} editable={false}/></div><Footer/></Fragment>}/>
+          <Route path="/home" render={()=> <Fragment><AcogNavBar title="Remittance Advice Automation" /><div style={{padding:20}}><CustomTable data={data} title="Remittance" enableclick={true} editable={false}/></div><Footer/></Fragment>}/>
           <Route path="/view/:imgpath" render={(props) => <Fragment><AcogNavBar title="Remmitance Advice Automation" /><View key={props.match.params.imgpath} {...props}/> <Footer/></Fragment>}/>
           <Route path="*" render={()=> <Fragment><AcogNavBar title="Remmitance Advice Automation" /><div style={{padding:20}}><CustomTable data={data} title="Remittance" enableclick={true} editable={false}/></div><Footer/></Fragment>}/>
           
