@@ -12,6 +12,7 @@ import DateEditor from "react-tabulator/lib/editors/DateEditor";
 
 
 export function ARTable(props) {
+    console.log(props);
     const column_names = Object.keys(props.data[0])
     // const [imgpath, setImgPath] = useState(null)
     // const [isOpen, setIsOpen] = useState(false);
@@ -115,7 +116,7 @@ export default function CustomTable(props) {
         "Discount/Adj.": false,
         "Net Amount Paid": true,
         "Status": true,
-        "Imagepath": false,
+        "Imagepath": true,
     });
     const rowClick = (e, row) => {
         if (row.getData().Imagepath !== "" && row.getData().Imagepath !== undefined) {
